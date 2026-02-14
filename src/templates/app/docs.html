@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Reference docs — Meeting Prep Agent{% endblock %}
+{% block content %}
+  <h1>Reference docs</h1>
+  <p class="muted">Tag PDFs or paste content by category (interview, networking, etc.). <a href="{{ url_for('docs_tag') }}">Tag file</a> · <a href="{{ url_for('docs_inline') }}">Paste content (e.g. Google Doc)</a></p>
+
+  {% if by_category %}
+  <div class="card">
+    {% for category, docs in by_category.items() %}
+    {% if docs %}
+    <h2>{{ category }}</h2>
+    <ul>
+      {% for d in docs %}
+      <li>
+        {{ d.filename }} {% if d.label %}({{ d.label }}){% endif %}
+        {% if d.path.startswith('inline:') %}<span class="muted">inline</span>{% endif %}
+        <form method="post" action="{{ url_for('docs_remove') }}" style="display: inline; margin-left: 0.5rem;">
+          <input type="hidden" name="path_or_id" value="{{ d.path }}">
+          <button type="submit" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Remove</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">
+    <p class="muted">No docs tagged. Tag a file or paste content to use in prep briefs.</p>
+  </div>
+  {% endif %}
+{% endblock %}

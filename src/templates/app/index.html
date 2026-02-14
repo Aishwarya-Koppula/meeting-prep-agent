@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Home — Meeting Prep Agent{% endblock %}
+{% block content %}
+  <h1>Meeting Prep Agent</h1>
+  <p class="muted">Run the pipeline to fetch today’s meetings, generate AI briefs, and optionally send the digest email.</p>
+
+  <div class="card">
+    <h2>Run pipeline</h2>
+    <form method="post" action="{{ url_for('run') }}">
+      <button type="submit" name="dry_run" value="0">Run now & send email</button>
+      <button type="submit" name="dry_run" value="1" class="btn btn-secondary">Preview only (no email)</button>
+    </form>
+    <p class="muted" style="margin-top: 0.75rem;">Preview uses the same pipeline but does not send email. Add meetings under Meetings if you have no calendar connected.</p>
+  </div>
+
+  {% if config %}
+  <div class="card">
+    <h2>Config</h2>
+    <p class="muted">Google Calendar: {{ 'on' if config.google.enabled else 'off' }} · Outlook: {{ 'on' if config.outlook.enabled else 'off' }}</p>
+  </div>
+  {% else %}
+  <div class="card">
+    <p class="error">Config not loaded. Ensure <code>config.yaml</code> and <code>.env</code> exist.</p>
+  </div>
+  {% endif %}
+{% endblock %}

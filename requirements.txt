@@ -1,0 +1,37 @@
+# Core - AI
+anthropic>=0.39.0
+
+# Core - Google Calendar
+google-api-python-client>=2.100.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.2.0
+
+# Core - Outlook/Teams (Microsoft Graph API)
+requests>=2.31.0
+
+# iCal / UniTime (university timetables, .ics feeds)
+icalendar>=5.0.0
+
+# Reference docs (PDF text extraction)
+PyPDF2>=3.0.0
+
+# Data Models & Config
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+pyyaml>=6.0.0
+python-dotenv>=1.0.0
+
+# Web app
+flask>=3.0.0
+
+# Email Templates
+jinja2>=3.1.0
+
+# Scheduling
+apscheduler>=3.10.0
+pytz>=2023.3
+
+# Development
+pytest>=7.4.0
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0

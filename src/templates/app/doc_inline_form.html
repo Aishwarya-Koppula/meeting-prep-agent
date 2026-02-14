@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Paste content — Meeting Prep Agent{% endblock %}
+{% block content %}
+  <h1>Paste content (e.g. from Google Doc)</h1>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <div class="card">
+    <form method="post" action="{{ url_for('docs_inline') }}">
+      <label>Category *</label>
+      <input type="text" name="category" placeholder="interview, networking, client, team, 1:1, other">
+      <label>Short label (optional)</label>
+      <input type="text" name="label" placeholder="e.g. Interview STAR tips">
+      <label>Content *</label>
+      <textarea name="content" rows="12" placeholder="Paste your notes or doc content here..."></textarea>
+      <div style="margin-top: 1rem;">
+        <button type="submit">Save</button>
+        <a href="{{ url_for('docs_list') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

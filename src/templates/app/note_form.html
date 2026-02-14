@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Add note — Meeting Prep Agent{% endblock %}
+{% block content %}
+  <h1>Add meeting note</h1>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <div class="card">
+    <form method="post" action="{{ url_for('notes_add') }}">
+      <label>Meeting title *</label>
+      <input type="text" name="meeting_title" required placeholder="e.g. 1:1 with Alex">
+      <label>Attendees (comma-separated)</label>
+      <input type="text" name="attendees" placeholder="alex@co.com">
+      <label>Notes / key takeaways *</label>
+      <textarea name="content" required placeholder="What was discussed, outcomes..."></textarea>
+      <label>Action items (one per line)</label>
+      <textarea name="action_items" placeholder="Follow up on X\nSchedule Y"></textarea>
+      <label>Decisions (one per line)</label>
+      <textarea name="decisions" placeholder="Moving to weekly cadence"></textarea>
+      <label>Date</label>
+      <input type="date" name="date" value="{{ now or '' }}">
+      <div style="margin-top: 1rem;">
+        <button type="submit">Save</button>
+        <a href="{{ url_for('notes_list') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

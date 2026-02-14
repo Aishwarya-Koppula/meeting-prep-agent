@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Prep Brief - {{ date }}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5; color: #1a1a1a;">
+
+    <!-- Wrapper table for email client compatibility -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+
+                    <!-- ══ Header ══ -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px 24px; border-radius: 12px 12px 0 0;">
+                            <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #ffffff;">
+                                Good Morning!
+                            </h1>
+                            <p style="margin: 0; font-size: 16px; color: rgba(255,255,255,0.9);">
+                                {{ date }}
+                            </p>
+                            <p style="margin: 12px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.8);">
+                                You have <strong style="color: #ffffff;">{{ total_meetings }} meeting{{ 's' if total_meetings != 1 else '' }}</strong> today
+                                ({{ total_hours }} hours)
+                                {% if high_priority_count > 0 %}
+                                &middot; <strong style="color: #fbbf24;">{{ high_priority_count }} high priority</strong>
+                                {% endif %}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- ══ Meeting Briefs ══ -->
+                    {% for brief in briefs %}
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 0;">
+
+                            <!-- Priority color bar + meeting card -->
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <!-- Color bar on the left -->
+                                    <td width="4" style="background-color: {% if brief.event.priority.value == 'high' %}#ef4444{% elif brief.event.priority.value == 'medium' %}#f59e0b{% else %}#22c55e{% endif %};"></td>
+                                    <td style="padding: 24px 20px;">
+
+                                        <!-- Priority badge + time -->
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td>
+                                                    <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+                                                        {% if brief.event.priority.value == 'high' %}
+                                                            background-color: #fef2f2; color: #dc2626;
+                                                        {% elif brief.event.priority.value == 'medium' %}
+                                                            background-color: #fffbeb; color: #d97706;
+                                                        {% else %}
+                                                            background-color: #f0fdf4; color: #16a34a;
+                                                        {% endif %}
+                                                    ">
+                                                        {{ brief.event.priority.value }} priority
+                                                    </span>
+                                                    <span style="margin-left: 8px; font-size: 13px; color: #6b7280;">
+                                                        {{ brief.event.category.value }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Meeting title -->
+                                        <h2 style="margin: 12px 0 4px 0; font-size: 18px; color: #1a1a1a;">
+                                            {{ brief.event.event.title }}
+                                        </h2>
+
+                                        <!-- Time, duration, location -->
+                                        <p style="margin: 0 0 16px 0; font-size: 14px; color: #6b7280;">
+                                            {{ brief.event.event.start_time.strftime('%I:%M %p') }} - {{ brief.event.event.end_time.strftime('%I:%M %p') }}
+                                            &middot; {{ brief.event.duration_minutes }} min
+                                            {% if brief.event.event.location %}
+                                            &middot; {{ brief.event.event.location }}
+                                            {% endif %}
+                                        </p>
+
+                                        <!-- Attendees -->
+                                        {% if brief.event.event.attendees %}
+                                        <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280;">
+                                            <strong>Attendees:</strong>
+                                            {{ brief.event.event.attendees | join(', ') }}
+                                        </p>
+                                        {% endif %}
+
+                                        <!-- AI Summary -->
+                                        <div style="background-color: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                                            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #374151;">
+                                                {{ brief.summary }}
+                                            </p>
+                                        </div>
+
+                                        <!-- Talking Points -->
+                                        {% if brief.talking_points %}
+                                        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Talking Points
+                                        </h3>
+                                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;">
+                                            {% for tp in brief.talking_points %}
+                                            <tr>
+                                                <td style="padding: 6px 0; font-size: 14px; color: #374151; vertical-align: top;" width="24">
+                                                    {% if tp.category == 'question' %}&#10067;{% elif tp.category == 'follow-up' %}&#9201;{% elif tp.category == 'update' %}&#128196;{% else %}&#128172;{% endif %}
+                                                </td>
+                                                <td style="padding: 6px 0 6px 8px; font-size: 14px; color: #374151;">
+                                                    {{ tp.point }}
+                                                    <span style="font-size: 11px; color: #9ca3af; margin-left: 4px;">({{ tp.category }})</span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                        {% endif %}
+
+                                        <!-- Suggested Questions -->
+                                        {% if brief.suggested_questions %}
+                                        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Questions to Ask
+                                        </h3>
+                                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;">
+                                            {% for q in brief.suggested_questions %}
+                                            <tr>
+                                                <td style="padding: 4px 0; font-size: 14px; color: #374151; vertical-align: top; font-style: italic;">
+                                                    &ldquo;{{ q }}&rdquo;
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                        {% endif %}
+
+                                        <!-- Context Notes -->
+                                        {% if brief.context_notes %}
+                                        <div style="background-color: #eff6ff; padding: 12px 16px; border-radius: 6px; border-left: 3px solid #3b82f6; margin-bottom: 16px;">
+                                            <p style="margin: 0; font-size: 13px; color: #1e40af;">
+                                                <strong>Prep:</strong> {{ brief.context_notes }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+
+                                        <!-- Join Meeting Button -->
+                                        {% if brief.event.event.meeting_link %}
+                                        <table cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="background-color: #667eea; border-radius: 6px;">
+                                                    <a href="{{ brief.event.event.meeting_link }}"
+                                                       style="display: inline-block; padding: 10px 24px; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none;">
+                                                        Join Meeting
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {% endif %}
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Divider between meetings -->
+                    {% if not loop.last %}
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 0 20px;">
+                            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0;">
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% endfor %}
+
+                    <!-- ══ No Meetings Message ══ -->
+                    {% if not briefs %}
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 40px 24px; text-align: center;">
+                            <p style="font-size: 48px; margin: 0;">&#127881;</p>
+                            <h2 style="margin: 16px 0 8px 0; color: #374151;">No meetings today!</h2>
+                            <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                Enjoy your focus time. You've earned it.
+                            </p>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- ══ Footer ══ -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 24px; border-radius: 0 0 12px 12px; border-top: 2px solid #e5e7eb;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #374151;">
+                                            Today's Summary
+                                        </h3>
+                                        <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.6;">
+                                            Total meetings: <strong>{{ total_meetings }}</strong><br>
+                                            {% if high_priority_count > 0 %}High priority: <strong>{{ high_priority_count }}</strong><br>{% endif %}
+                                            Total meeting time: <strong>{{ total_hours }} hours</strong>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin: 20px 0 0 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                                Have a productive day!<br>
+                                Generated at {{ generated_at }} by
+                                <a href="https://github.com/aishwarya/meeting-prep-agent" style="color: #667eea; text-decoration: none;">AI Meeting Prep Agent</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

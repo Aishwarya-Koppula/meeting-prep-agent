@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Calendars — Meeting Prep Agent{% endblock %}
+{% block content %}
+  <h1>Calendar options</h1>
+  <p class="muted">Your digest merges events from every enabled source below. Enable only what you use.</p>
+
+  <div class="card">
+    <h2>Google Calendar</h2>
+    <p>
+      {% if config and config.google.enabled %}
+        <strong class="success">On</strong> — Events from your Google Calendar are included.
+      {% else %}
+        <strong>Off</strong> — Enable in <code>config.yaml</code> (<code>google.enabled: true</code>) and add <code>credentials.json</code> for OAuth.
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Outlook &amp; Microsoft Teams</h2>
+    <p>
+      {% if config and config.outlook.enabled %}
+        <strong class="success">On</strong> — Outlook and Teams meetings are included.
+      {% else %}
+        <strong>Off</strong> — Set <code>outlook.enabled: true</code> in <code>config.yaml</code> and <code>OUTLOOK_CLIENT_ID</code> in <code>.env</code>.
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Manual meetings</h2>
+    <p><strong class="success">Always on</strong> — Events you add under <a href="{{ url_for('meetings_list') }}">Meetings</a> are always included.</p>
+  </div>
+
+  <div class="card">
+    <h2>University events (campus calendar)</h2>
+    <p>
+      Browse campus events and add the ones you care about to your calendar.
+      {% for key, info in university_endpoints.items() %}
+        <br><a href="{{ info.base_url }}" target="_blank" rel="noopener">{{ info.name }}</a> — use CLI: <code>python -m src.main --events --university {{ key }}</code>
+      {% endfor %}
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>iCal / UniTime (university timetables)</h2>
+    <p>
+      {% if config and config.ical.enabled %}
+        <strong class="success">On</strong> — Subscriptions below are fetched and merged.
+      {% else %}
+        <strong>Off</strong> — Set <code>ical.enabled: true</code> in <code>config.yaml</code>.
+      {% endif %}
+      Students: in UniTime open <strong>Personal Timetable → Export → Copy iCalendar URL</strong> and add it below.
+    </p>
+    <form method="post" action="{{ url_for('calendars_ical_add') }}" style="margin-top: 1rem;">
+      <label>Add iCal / UniTime URL</label>
+      <input type="url" name="url" placeholder="https://unitime.uni.edu/export?..." required>
+      <label>Name (optional, e.g. UniTime)</label>
+      <input type="text" name="name" placeholder="UniTime / Course schedule">
+      <button type="submit">Add subscription</button>
+    </form>
+    {% if ical_subscriptions %}
+    <ul style="margin-top: 1rem; list-style: none; padding: 0;">
+      {% for sub in ical_subscriptions %}
+      <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+        {{ sub.name or sub.url[:60] }}{% if (sub.url|length) > 60 %}...{% endif %} — <span class="muted">{{ sub.url[:80] }}{% if (sub.url|length) > 80 %}...{% endif %}</span>
+        <form method="post" action="{{ url_for('calendars_ical_remove') }}" style="display: inline; margin-left: 0.5rem;">
+          <input type="hidden" name="index" value="{{ loop.index0 }}">
+          <button type="submit" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Remove</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted" style="margin-top: 0.75rem;">No iCal subscriptions yet. Add your UniTime or other .ics URL above.</p>
+    {% endif %}
+  </div>
+{% endblock %}

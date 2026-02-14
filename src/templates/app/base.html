@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Meeting Prep Agent{% endblock %}</title>
+  <style>
+    :root { --bg: #0f1419; --card: #1a2332; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --success: #3fb950; --border: #30363d; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; min-height: 100vh; line-height: 1.5; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+    nav { display: flex; gap: 1rem; flex-wrap: wrap; padding: 0.75rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    nav a { color: var(--accent); text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.35rem; margin: 0 0 1rem; }
+    h2 { font-size: 1.1rem; margin: 0 0 0.5rem; color: var(--muted); }
+    form label { display: block; margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem; }
+    form input[type=text], form input[type=number], form input[type=date], form input[type=time], form textarea { width: 100%; max-width: 400px; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
+    form textarea { min-height: 80px; resize: vertical; }
+    button, .btn { display: inline-block; padding: 0.5rem 1rem; background: var(--accent); color: var(--bg); border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
+    button:hover, .btn:hover { opacity: 0.9; }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .error { color: #f85149; margin: 0.5rem 0; }
+    .success { color: var(--success); }
+    pre, .log { font-family: ui-monospace, monospace; font-size: 0.8rem; white-space: pre-wrap; background: var(--bg); padding: 1rem; border-radius: 6px; overflow-x: auto; }
+    ul { padding-left: 1.25rem; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('calendars_list') }}">Calendars</a>
+      <a href="{{ url_for('meetings_list') }}">Meetings</a>
+      <a href="{{ url_for('docs_list') }}">Reference docs</a>
+      <a href="{{ url_for('notes_list') }}">Notes</a>
+      <a href="{{ url_for('notes_action_items') }}">Action items</a>
+    </nav>
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

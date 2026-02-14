@@ -1,0 +1,72 @@
+# ===========================================
+# AI Meeting Prep Agent - Configuration
+# ===========================================
+# This file contains non-secret preferences.
+# Secrets (API keys, passwords) go in .env
+#
+# Customize these settings to match your workflow.
+
+google:
+  # Enable/disable Google Calendar integration
+  enabled: true
+  # Which calendars to fetch events from
+  # "primary" = your main calendar
+  # Add more calendar IDs to aggregate multiple calendars
+  calendar_ids:
+    - "primary"
+  # How far ahead to look for events (hours)
+  lookahead_hours: 24
+
+outlook:
+  # Enable/disable Outlook + Teams integration
+  # Set to true and add OUTLOOK_CLIENT_ID to .env to enable
+  enabled: false
+  lookahead_hours: 24
+
+# iCal / UniTime (university course timetables, any .ics feed)
+# Add subscription URLs in the web app (Calendars) or in ical_sources.json
+ical:
+  enabled: true
+  lookahead_hours: 24
+  # sources_path: "./ical_sources.json"  # optional override
+
+anthropic:
+  # Which Claude model to use
+  # claude-sonnet-4-20250514 = good balance of speed and quality
+  # claude-opus-4-20250514 = highest quality but slower/more expensive
+  model: "claude-sonnet-4-20250514"
+  max_tokens: 1024
+  temperature: 0.7
+
+email:
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  subject_template: "Your Meeting Prep Brief - {date}"
+
+scheduler:
+  # When to send the daily digest (24-hour format)
+  run_hour: 8
+  run_minute: 0
+  timezone: "America/New_York"
+  weekdays_only: true
+
+filters:
+  # Skip all-day events (holidays, OOO, etc.)
+  exclude_all_day: true
+  # Skip cancelled events
+  exclude_cancelled: true
+  # Minimum meeting duration to include (minutes)
+  min_duration_minutes: 10
+  # Minimum attendees (0 = include solo events too)
+  min_attendees: 0
+  # Skip events whose title contains these strings (case-insensitive)
+  exclude_patterns:
+    - "OOO"
+    - "Out of Office"
+    - "Block"
+    - "Focus Time"
+    - "Lunch"
+    - "Break"
+
+log_level: "INFO"
+timezone: "America/New_York"

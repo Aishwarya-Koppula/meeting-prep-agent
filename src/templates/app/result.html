@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Pipeline result — Meeting Prep Agent{% endblock %}
+{% block content %}
+  <h1>Pipeline result</h1>
+  <p><a href="{{ url_for('index') }}">← Back to home</a></p>
+
+  {% if error %}
+  <div class="card">
+    <p class="error">{{ error }}</p>
+  </div>
+  {% else %}
+  {% if dry_run %}
+  <div class="card success">Preview completed (no email sent).</div>
+  {% elif email_sent %}
+  <div class="card success">Digest email sent.</div>
+  {% else %}
+  <div class="card">Pipeline completed (no email or send failed).</div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Log</h2>
+    <pre class="log">{% for line in logs %}{{ line }}\n{% endfor %}</pre>
+  </div>
+
+  {% if preview_lines %}
+  <div class="card">
+    <h2>Digest preview</h2>
+    <pre class="log">{% for line in preview_lines %}{{ line }}\n{% endfor %}</pre>
+  </div>
+  {% endif %}
+  {% endif %}
+{% endblock %}

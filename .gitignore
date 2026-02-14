@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+**/__pycache__/
+**/*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Secrets - NEVER commit these
+.env
+credentials.json
+token.json
+token.pickle
+outlook_token.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# User data - personal meeting data
+meetings.json
+meeting_notes.json
+reference_docs.json
+ical_sources.json
+digest_preview.json
+
+# Test coverage
+htmlcov/
+.coverage
+.pytest_cache/

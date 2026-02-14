@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Action items — Meeting Prep Agent{% endblock %}
+{% block content %}
+  <h1>Open action items</h1>
+  <p class="muted">From meeting notes. <a href="{{ url_for('notes_list') }}">All notes</a></p>
+
+  {% if items %}
+  <div class="card">
+    <ul style="list-style: none; padding: 0;">
+      {% for item in items %}
+      <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+        <strong>{{ item.action }}</strong>
+        <span class="muted"> — {{ item.meeting }} ({{ item.date }})</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% else %}
+  <div class="card">
+    <p class="muted">No action items. Add notes with action items to see them here.</p>
+  </div>
+  {% endif %}
+{% endblock %}

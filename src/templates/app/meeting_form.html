@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Add meeting — Meeting Prep Agent{% endblock %}
+{% block content %}
+  <h1>Add meeting</h1>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <div class="card">
+    <form method="post" action="{{ url_for('meetings_add') }}">
+      <label>Title *</label>
+      <input type="text" name="title" required placeholder="e.g. 1:1 with Alex">
+      <label>Date</label>
+      <input type="date" name="date" value="{{ now or '' }}">
+      <label>Start time</label>
+      <input type="time" name="time" value="09:00">
+      <label>Duration (minutes)</label>
+      <input type="number" name="duration" value="30" min="5" max="480">
+      <label>Attendees (comma-separated)</label>
+      <input type="text" name="attendees" placeholder="alex@co.com, Bob">
+      <label>Description / agenda</label>
+      <textarea name="description" placeholder="Optional"></textarea>
+      <label>Location</label>
+      <input type="text" name="location" placeholder="Optional">
+      <label>Meeting link (Zoom / Meet / Teams)</label>
+      <input type="text" name="meeting_link" placeholder="https://...">
+      <label><input type="checkbox" name="is_recurring"> Recurring</label>
+      <div style="margin-top: 1rem;">
+        <button type="submit">Save</button>
+        <a href="{{ url_for('meetings_list') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
