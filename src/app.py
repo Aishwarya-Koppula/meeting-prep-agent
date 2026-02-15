@@ -20,6 +20,9 @@ from src.reference_docs import ReferenceDocsStore
 from src.meeting_notes import MeetingNotesStore
 from src.ical_client import load_ical_sources, save_ical_sources
 from src.university_events import UNIVERSITY_ENDPOINTS
+from src.calendar_client import GoogleCalendarClient
+from src.outlook_client import OutlookCalendarClient
+from src.ical_client import fetch_all_ical_events
 
 app = Flask(__name__, template_folder=str(Path(__file__).parent / "templates" / "app"))
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4 MB for uploads
@@ -254,6 +257,91 @@ def notes_search():
 def notes_action_items():
     items = MeetingNotesStore().get_open_action_items()
     return render_template("action_items.html", items=items)
+
+
+@app.route("/week")
+def week_view():
+    """Show a simple weekly calendar view (7 days) with events from enabled sources.
+
+    This aggregates Google, Outlook, iCal, and manual meetings and presents them
+    grouped by day. Authentication is attempted for Google/Outlook and any
+    failures are shown on the page.
+    """
+    config = _config()
+    if not config:
+        return render_template("week.html", days=[], errors=["Could not load config"])
+
+    errors = []
+    all_events = []
+
+    # Time window: today -> next 7 days
+    now = datetime.now()
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=7)
+
+    # Google
+    if config.google.enabled:
+        try:
+            g = GoogleCalendarClient(config.google)
+            g.authenticate()
+            all_events.extend(g.fetch_events(start, end))
+        except Exception as e:
+            errors.append(f"Google: {e}")
+
+    # Outlook / Teams
+    if config.outlook.enabled:
+        try:
+            o = OutlookCalendarClient(config.outlook)
+            o.authenticate()
+            all_events.extend(o.fetch_events(start, end))
+        except Exception as e:
+            errors.append(f"Outlook: {e}")
+
+    # iCal subscriptions
+    if config.ical.enabled:
+        try:
+            ical_events = fetch_all_ical_events(lookahead_hours=168, sources_path=config.ical.sources_path)
+            all_events.extend(ical_events)
+        except Exception as e:
+            errors.append(f"iCal: {e}")
+
+    # Manual meetings
+    try:
+        store = MeetingStore()
+        manual = store.to_calendar_events()
+        all_events.extend(manual)
+    except Exception as e:
+        errors.append(f"Manual store: {e}")
+
+    # Normalize and group by day
+    def to_simple(ev):
+        try:
+            start_dt = ev.start_time
+            end_dt = ev.end_time
+            return {
+                "title": ev.title,
+                "start": start_dt.strftime("%Y-%m-%dT%H:%M"),
+                "end": end_dt.strftime("%Y-%m-%dT%H:%M"),
+                "date": start_dt.date().isoformat(),
+                "source": getattr(ev, "source", "unknown"),
+                "calendar_id": getattr(ev, "calendar_id", ""),
+                "location": ev.location or "",
+            }
+        except Exception:
+            return {"title": getattr(ev, "title", "(No title)"), "date": start.date().isoformat(), "start": "", "end": "", "source": "", "location": ""}
+
+    simples = [to_simple(e) for e in all_events]
+
+    dow_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    days = []
+    for i in range(7):
+        d = start + timedelta(days=i)
+        day_str = d.date().isoformat()
+        items = [s for s in simples if s.get("date") == day_str]
+        items.sort(key=lambda x: x.get("start") or "")
+        days.append({"date": day_str, "dow": dow_names[d.weekday()], "items": items})
+
+    return render_template("week.html", days=days, errors=errors)
 
 
 def main():
