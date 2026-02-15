@@ -5,42 +5,91 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Meeting Prep Agent{% endblock %}</title>
   <style>
-    :root { --bg: #0f1419; --card: #1a2332; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --success: #3fb950; --border: #30363d; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; min-height: 100vh; line-height: 1.5; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
-    nav { display: flex; gap: 1rem; flex-wrap: wrap; padding: 0.75rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
-    nav a { color: var(--accent); text-decoration: none; }
-    nav a:hover { text-decoration: underline; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
-    h1 { font-size: 1.35rem; margin: 0 0 1rem; }
-    h2 { font-size: 1.1rem; margin: 0 0 0.5rem; color: var(--muted); }
-    form label { display: block; margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem; }
-    form input[type=text], form input[type=number], form input[type=date], form input[type=time], form textarea { width: 100%; max-width: 400px; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
-    form textarea { min-height: 80px; resize: vertical; }
-    button, .btn { display: inline-block; padding: 0.5rem 1rem; background: var(--accent); color: var(--bg); border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
+    :root { --bg: #0a0e14; --card: #141b27; --card-hover: #1a2435; --text: #e6edf3; --muted: #7d8590; --accent: #58a6ff; --accent-dim: #1f3a5f; --success: #3fb950; --success-dim: #1a3a20; --warn: #d29922; --warn-dim: #3d2e00; --danger: #f85149; --border: #21262d; --input-bg: #0d1117; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; background: var(--card); border-right: 1px solid var(--border); padding: 1.25rem 0; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 10; }
+    .sidebar .logo { padding: 0 1.25rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+    .sidebar .logo h2 { font-size: 1rem; font-weight: 700; color: var(--accent); }
+    .sidebar .logo span { font-size: 0.75rem; color: var(--muted); }
+    .sidebar nav a { display: block; padding: 0.55rem 1.25rem; color: var(--muted); text-decoration: none; font-size: 0.875rem; transition: all 0.15s; border-left: 2px solid transparent; }
+    .sidebar nav a:hover { color: var(--text); background: var(--card-hover); }
+    .sidebar nav a.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+    .sidebar nav .sep { height: 1px; background: var(--border); margin: 0.5rem 1.25rem; }
+    .main { margin-left: 220px; flex: 1; padding: 2rem 2.5rem; max-width: 1000px; }
+    @media (max-width: 768px) {
+      .sidebar { position: static; width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .sidebar nav { display: flex; flex-wrap: wrap; }
+      .sidebar nav a { border-left: none; padding: 0.5rem 0.75rem; }
+      .sidebar nav .sep { display: none; }
+      .main { margin-left: 0; padding: 1.25rem; }
+      .layout { flex-direction: column; }
+    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    h2 { font-size: 1rem; font-weight: 600; color: var(--muted); margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; font-weight: 500; padding: 0.2rem 0.6rem; border-radius: 20px; }
+    .badge-success { background: var(--success-dim); color: var(--success); }
+    .badge-warn { background: var(--warn-dim); color: var(--warn); }
+    .badge-off { background: var(--border); color: var(--muted); }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+    .badge-success::before { background: var(--success); }
+    .badge-warn::before { background: var(--warn); }
+    .badge-off::before { background: var(--muted); }
+    form label { display: block; margin-top: 0.75rem; color: var(--muted); font-size: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
+    form input[type=text], form input[type=url], form input[type=number], form input[type=date], form input[type=time], form textarea, form select { width: 100%; max-width: 450px; padding: 0.55rem 0.75rem; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.875rem; transition: border-color 0.15s; }
+    form input:focus, form textarea:focus, form select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+    form textarea { min-height: 80px; resize: vertical; font-family: inherit; }
+    button, .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; text-decoration: none; transition: all 0.15s; }
     button:hover, .btn:hover { opacity: 0.9; }
     .btn-secondary { background: var(--border); color: var(--text); }
-    .error { color: #f85149; margin: 0.5rem 0; }
+    .btn-secondary:hover { background: #30363d; }
+    .btn-success { background: var(--success); }
+    .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.78rem; }
+    .item-list { list-style: none; }
+    .item-list li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .item-list li:last-child { border-bottom: none; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-title { font-weight: 600; }
+    .item-meta { color: var(--muted); font-size: 0.8rem; }
+    .error { color: var(--danger); font-size: 0.875rem; }
     .success { color: var(--success); }
-    pre, .log { font-family: ui-monospace, monospace; font-size: 0.8rem; white-space: pre-wrap; background: var(--bg); padding: 1rem; border-radius: 6px; overflow-x: auto; }
-    ul { padding-left: 1.25rem; }
-    .muted { color: var(--muted); font-size: 0.9rem; }
+    .muted { color: var(--muted); font-size: 0.875rem; }
+    pre, .log { font-family: 'SF Mono', ui-monospace, monospace; font-size: 0.78rem; white-space: pre-wrap; background: var(--input-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); line-height: 1.7; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+    .auth-code { font-family: 'SF Mono', monospace; font-size: 1.8rem; font-weight: 700; color: var(--accent); letter-spacing: 0.15em; padding: 0.75rem; background: var(--accent-dim); border-radius: 8px; margin: 1rem 0; display: inline-block; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
   {% block head %}{% endblock %}
 </head>
 <body>
-  <div class="wrap">
-    <nav>
-      <a href="{{ url_for('index') }}">Home</a>
-      <a href="{{ url_for('calendars_list') }}">Calendars</a>
-      <a href="{{ url_for('meetings_list') }}">Meetings</a>
-      <a href="{{ url_for('docs_list') }}">Reference docs</a>
-      <a href="{{ url_for('notes_list') }}">Notes</a>
-      <a href="{{ url_for('notes_action_items') }}">Action items</a>
-      <a href="{{ url_for('week_view') }}">Weekly view</a>
-    </nav>
-    {% block content %}{% endblock %}
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="logo">
+        <h2>Meeting Prep</h2>
+        <span>AI Agent</span>
+      </div>
+      <nav>
+        <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
+        <a href="{{ url_for('week_view') }}" {% if request.endpoint == 'week_view' %}class="active"{% endif %}>Weekly View</a>
+        <div class="sep"></div>
+        <a href="{{ url_for('calendars_list') }}" {% if request.endpoint == 'calendars_list' %}class="active"{% endif %}>Calendars</a>
+        <a href="{{ url_for('meetings_list') }}" {% if request.endpoint in ('meetings_list', 'meetings_add') %}class="active"{% endif %}>Meetings</a>
+        <div class="sep"></div>
+        <a href="{{ url_for('docs_list') }}" {% if request.endpoint in ('docs_list', 'docs_tag', 'docs_inline') %}class="active"{% endif %}>Reference Docs</a>
+        <a href="{{ url_for('notes_list') }}" {% if request.endpoint in ('notes_list', 'notes_add', 'notes_search') %}class="active"{% endif %}>Notes</a>
+        <a href="{{ url_for('notes_action_items') }}" {% if request.endpoint == 'notes_action_items' %}class="active"{% endif %}>Action Items</a>
+      </nav>
+    </aside>
+    <main class="main">
+      {% block content %}{% endblock %}
+    </main>
   </div>
 </body>
 </html>

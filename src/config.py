@@ -38,10 +38,10 @@ class OutlookConfig(BaseSettings):
     """Microsoft Outlook + Teams configuration (via Microsoft Graph API)."""
     enabled: bool = False
     client_id: str = ""  # Azure App Registration client ID
+    tenant_id: str = "common"  # Azure tenant ID (use "common" for multi-tenant, or org ID for single-tenant)
     token_path: str = "./outlook_token.json"
     scopes: List[str] = [
         "Calendars.Read",
-        "OnlineMeetings.Read",
         "offline_access",
     ]
     lookahead_hours: int = 24

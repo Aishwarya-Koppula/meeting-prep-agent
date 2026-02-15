@@ -8,10 +8,11 @@ Uses the same pipeline and stores as the CLI; no logic duplication.
 """
 
 import json
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, redirect, render_template, request, url_for, jsonify
 
 from src.config import load_config
 from src.main import run_pipeline, _digest_preview_lines
@@ -27,6 +28,10 @@ from src.ical_client import fetch_all_ical_events
 app = Flask(__name__, template_folder=str(Path(__file__).parent / "templates" / "app"))
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4 MB for uploads
 
+# Global state for Outlook device code auth (web-based flow)
+_outlook_auth_state = {"device_code_data": None, "status": "idle", "error": None}
+_outlook_auth_lock = threading.Lock()
+
 
 def _config():
     try:
@@ -35,10 +40,41 @@ def _config():
         return None
 
 
+def _check_outlook_token():
+    """Check if a valid Outlook token exists."""
+    config = _config()
+    if not config or not config.outlook.enabled:
+        return False
+    token_path = Path(config.outlook.token_path)
+    if not token_path.exists():
+        return False
+    try:
+        data = json.loads(token_path.read_text())
+        return "access_token" in data or "refresh_token" in data
+    except Exception:
+        return False
+
+
+def _check_google_token():
+    """Check if a valid Google token exists."""
+    config = _config()
+    if not config or not config.google.enabled:
+        return False
+    token_path = Path(config.google.token_path)
+    return token_path.exists()
+
+
 @app.route("/")
 def index():
     config = _config()
-    return render_template("index.html", config=config)
+    google_connected = _check_google_token()
+    outlook_connected = _check_outlook_token()
+    store = MeetingStore()
+    meetings_count = len(store.get_all_meetings())
+    return render_template("index.html", config=config,
+                           google_connected=google_connected,
+                           outlook_connected=outlook_connected,
+                           meetings_count=meetings_count)
 
 
 @app.route("/run", methods=["POST"])
@@ -69,6 +105,107 @@ def run():
     )
 
 
+# ── Outlook auth (web-based device code flow) ─────────────────────
+
+@app.route("/auth/outlook/start", methods=["POST"])
+def outlook_auth_start():
+    """Start the Outlook device code flow and return the code to the browser."""
+    config = _config()
+    if not config or not config.outlook.enabled:
+        return jsonify({"error": "Outlook not enabled in config.yaml"}), 400
+    if not config.outlook.client_id:
+        return jsonify({"error": "OUTLOOK_CLIENT_ID not set in .env"}), 400
+
+    import requests as req
+    tenant = getattr(config.outlook, "tenant_id", "common") or "common"
+    auth_url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0"
+
+    try:
+        resp = req.post(
+            f"{auth_url}/devicecode",
+            data={
+                "client_id": config.outlook.client_id,
+                "scope": " ".join(config.outlook.scopes),
+            },
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        return jsonify({"error": f"Failed to start auth: {e}"}), 500
+
+    with _outlook_auth_lock:
+        _outlook_auth_state["device_code_data"] = data
+        _outlook_auth_state["status"] = "pending"
+        _outlook_auth_state["error"] = None
+
+    # Start polling in background thread
+    thread = threading.Thread(target=_poll_outlook_token, args=(config, data, auth_url), daemon=True)
+    thread.start()
+
+    return jsonify({
+        "user_code": data.get("user_code"),
+        "verification_uri": data.get("verification_uri"),
+        "message": data.get("message"),
+    })
+
+
+@app.route("/auth/outlook/status")
+def outlook_auth_status():
+    """Check if Outlook auth has completed."""
+    with _outlook_auth_lock:
+        status = _outlook_auth_state["status"]
+        error = _outlook_auth_state["error"]
+    return jsonify({"status": status, "error": error})
+
+
+def _poll_outlook_token(config, device_code_data, auth_url):
+    """Background thread: poll Microsoft for the token after user authorizes."""
+    import time
+    import requests as req
+
+    interval = device_code_data.get("interval", 5)
+    expires_in = device_code_data.get("expires_in", 900)
+    device_code = device_code_data["device_code"]
+    start = time.time()
+
+    while time.time() - start < expires_in:
+        time.sleep(interval)
+        try:
+            resp = req.post(
+                f"{auth_url}/token",
+                data={
+                    "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+                    "client_id": config.outlook.client_id,
+                    "device_code": device_code,
+                },
+                timeout=10,
+            )
+            data = resp.json()
+            if "access_token" in data:
+                # Save token
+                token_path = Path(config.outlook.token_path)
+                token_path.write_text(json.dumps(data, indent=2))
+                with _outlook_auth_lock:
+                    _outlook_auth_state["status"] = "success"
+                return
+            elif data.get("error") == "authorization_pending":
+                continue
+            elif data.get("error") == "slow_down":
+                interval += 5
+            else:
+                with _outlook_auth_lock:
+                    _outlook_auth_state["status"] = "error"
+                    _outlook_auth_state["error"] = data.get("error_description", data.get("error", "Unknown error"))
+                return
+        except Exception:
+            continue
+
+    with _outlook_auth_lock:
+        _outlook_auth_state["status"] = "error"
+        _outlook_auth_state["error"] = "Authentication timed out"
+
+
 # ── Calendars (sources overview + iCal / UniTime) ──────────────────
 
 @app.route("/calendars")
@@ -77,11 +214,15 @@ def calendars_list():
     config = _config()
     sources_path = getattr(config.ical, "sources_path", "./ical_sources.json") if config and hasattr(config, "ical") else "./ical_sources.json"
     ical_subs = load_ical_sources(sources_path)
+    google_connected = _check_google_token()
+    outlook_connected = _check_outlook_token()
     return render_template(
         "calendars.html",
         config=config,
         ical_subscriptions=ical_subs,
         university_endpoints=UNIVERSITY_ENDPOINTS,
+        google_connected=google_connected,
+        outlook_connected=outlook_connected,
     )
 
 
@@ -259,14 +400,11 @@ def notes_action_items():
     return render_template("action_items.html", items=items)
 
 
+# ── Weekly view ─────────────────────────────────────────────────
+
 @app.route("/week")
 def week_view():
-    """Show a simple weekly calendar view (7 days) with events from enabled sources.
-
-    This aggregates Google, Outlook, iCal, and manual meetings and presents them
-    grouped by day. Authentication is attempted for Google/Outlook and any
-    failures are shown on the page.
-    """
+    """Show a weekly calendar view (7 days) with events from enabled sources."""
     config = _config()
     if not config:
         return render_template("week.html", days=[], errors=["Could not load config"])
@@ -274,7 +412,6 @@ def week_view():
     errors = []
     all_events = []
 
-    # Time window: today -> next 7 days
     now = datetime.now()
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end = start + timedelta(days=7)
@@ -288,14 +425,16 @@ def week_view():
         except Exception as e:
             errors.append(f"Google: {e}")
 
-    # Outlook / Teams
-    if config.outlook.enabled:
+    # Outlook / Teams — only if token exists (no interactive auth in web view)
+    if config.outlook.enabled and _check_outlook_token():
         try:
             o = OutlookCalendarClient(config.outlook)
             o.authenticate()
             all_events.extend(o.fetch_events(start, end))
         except Exception as e:
             errors.append(f"Outlook: {e}")
+    elif config.outlook.enabled:
+        errors.append("Outlook: Not connected yet. Go to Calendars to connect.")
 
     # iCal subscriptions
     if config.ical.enabled:
@@ -328,7 +467,7 @@ def week_view():
                 "location": ev.location or "",
             }
         except Exception:
-            return {"title": getattr(ev, "title", "(No title)"), "date": start.date().isoformat(), "start": "", "end": "", "source": "", "location": ""}
+            return {"title": getattr(ev, "title", "(No title)"), "date": now.date().isoformat(), "start": "", "end": "", "source": "", "calendar_id": "", "location": ""}
 
     simples = [to_simple(e) for e in all_events]
 

@@ -12,7 +12,7 @@ to CalendarEvent so they merge with Google, Outlook, and manual meetings.
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as _tz
 from pathlib import Path
 from typing import List, Optional
 from urllib.parse import urlparse
@@ -86,12 +86,17 @@ def fetch_events_from_ical_url(
         return []
 
     events = []
-    now = datetime.now()
-    until = now + timedelta(hours=lookahead_hours)
+    now_utc = datetime.now(_tz.utc)
+    until_utc = now_utc + timedelta(hours=lookahead_hours)
 
     for component in cal.walk("VEVENT"):
         ev = _vevent_to_calendar_event(component, source_label, url)
-        if ev and ev.start_time <= until and ev.end_time >= now:
+        if ev is None:
+            continue
+        # Normalise to UTC for comparison (handle naive & aware datetimes)
+        st = ev.start_time if ev.start_time.tzinfo else ev.start_time.replace(tzinfo=_tz.utc)
+        et = ev.end_time if ev.end_time.tzinfo else ev.end_time.replace(tzinfo=_tz.utc)
+        if st <= until_utc and et >= now_utc:
             events.append(ev)
 
     return events

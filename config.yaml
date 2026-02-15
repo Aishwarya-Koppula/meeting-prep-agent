@@ -20,7 +20,7 @@ google:
 outlook:
   # Enable/disable Outlook + Teams integration
   # Set to true and add OUTLOOK_CLIENT_ID to .env to enable
-  enabled: false
+  enabled: true
   lookahead_hours: 24
 
 # iCal / UniTime (university course timetables, any .ics feed)

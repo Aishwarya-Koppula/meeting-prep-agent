@@ -37,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 # Microsoft Graph endpoints
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
-AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0"
 
 
 class OutlookCalendarClient:
@@ -56,6 +55,8 @@ class OutlookCalendarClient:
     def __init__(self, config: OutlookConfig):
         self.config = config
         self._access_token: Optional[str] = None
+        tenant = getattr(config, "tenant_id", "common") or "common"
+        self._auth_url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0"
 
     def authenticate(self) -> None:
         """
@@ -120,7 +121,7 @@ class OutlookCalendarClient:
         """Request a device code from Microsoft."""
         try:
             resp = requests.post(
-                f"{AUTH_URL}/devicecode",
+                f"{self._auth_url}/devicecode",
                 data={
                     "client_id": self.config.client_id,
                     "scope": " ".join(self.config.scopes),
@@ -146,7 +147,7 @@ class OutlookCalendarClient:
             time.sleep(interval)
             try:
                 resp = requests.post(
-                    f"{AUTH_URL}/token",
+                    f"{self._auth_url}/token",
                     data={
                         "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
                         "client_id": self.config.client_id,
@@ -174,7 +175,7 @@ class OutlookCalendarClient:
         """Refresh an expired access token."""
         try:
             resp = requests.post(
-                f"{AUTH_URL}/token",
+                f"{self._auth_url}/token",
                 data={
                     "grant_type": "refresh_token",
                     "client_id": self.config.client_id,

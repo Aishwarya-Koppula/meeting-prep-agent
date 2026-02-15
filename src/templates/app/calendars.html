@@ -1,77 +1,154 @@
 {% extends "base.html" %}
 {% block title %}Calendars — Meeting Prep Agent{% endblock %}
 {% block content %}
-  <h1>Calendar options</h1>
-  <p class="muted">Your digest merges events from every enabled source below. Enable only what you use.</p>
+  <h1>Calendars</h1>
+  <p class="subtitle">Connect your calendar sources. Events from all enabled sources are merged into your daily digest.</p>
 
-  <div class="card">
-    <h2>Google Calendar</h2>
-    <p>
+  <div class="grid-2">
+    <div class="card">
+      <h2>Google Calendar</h2>
       {% if config and config.google.enabled %}
-        <strong class="success">On</strong> — Events from your Google Calendar are included.
+        {% if google_connected %}
+          <span class="badge badge-success">Connected</span>
+        {% else %}
+          <span class="badge badge-warn">Enabled, needs auth</span>
+          <p class="muted" style="margin-top:0.5rem;">Run the pipeline once — a browser window will open for Google sign-in.</p>
+        {% endif %}
       {% else %}
-        <strong>Off</strong> — Enable in <code>config.yaml</code> (<code>google.enabled: true</code>) and add <code>credentials.json</code> for OAuth.
+        <span class="badge badge-off">Disabled</span>
+        <p class="muted" style="margin-top:0.5rem;">Set <code>google.enabled: true</code> in config.yaml and add credentials.json.</p>
       {% endif %}
-    </p>
-  </div>
+    </div>
 
-  <div class="card">
-    <h2>Outlook &amp; Microsoft Teams</h2>
-    <p>
+    <div class="card">
+      <h2>Outlook &amp; Teams</h2>
       {% if config and config.outlook.enabled %}
-        <strong class="success">On</strong> — Outlook and Teams meetings are included.
+        {% if outlook_connected %}
+          <span class="badge badge-success">Connected</span>
+        {% else %}
+          <span class="badge badge-warn">Enabled, needs auth</span>
+          <div id="outlook-auth" style="margin-top:0.75rem;">
+            <button onclick="startOutlookAuth()" id="outlook-connect-btn">Connect Outlook</button>
+          </div>
+          <div id="outlook-auth-flow" style="display:none; margin-top:0.75rem; text-align:center;">
+            <p class="muted">Go to the link below and enter this code:</p>
+            <div class="auth-code" id="outlook-code"></div>
+            <p><a id="outlook-link" href="#" target="_blank" rel="noopener">Open Microsoft login</a></p>
+            <p class="muted" style="margin-top:0.75rem;"><span class="spinner"></span> Waiting for you to sign in...</p>
+          </div>
+          <div id="outlook-auth-success" style="display:none; margin-top:0.75rem;">
+            <span class="badge badge-success">Connected!</span>
+            <p class="muted" style="margin-top:0.5rem;">Outlook is now connected. <a href="{{ url_for('calendars_list') }}">Refresh</a> to see updated status.</p>
+          </div>
+          <div id="outlook-auth-error" style="display:none; margin-top:0.75rem;">
+            <p class="error" id="outlook-error-msg"></p>
+            <button onclick="startOutlookAuth()" class="btn-secondary btn-sm" style="margin-top:0.5rem;">Try again</button>
+          </div>
+        {% endif %}
       {% else %}
-        <strong>Off</strong> — Set <code>outlook.enabled: true</code> in <code>config.yaml</code> and <code>OUTLOOK_CLIENT_ID</code> in <code>.env</code>.
+        <span class="badge badge-off">Disabled</span>
+        <p class="muted" style="margin-top:0.5rem;">Set <code>outlook.enabled: true</code> in config.yaml and add OUTLOOK_CLIENT_ID to .env.</p>
       {% endif %}
-    </p>
+    </div>
   </div>
 
   <div class="card">
-    <h2>Manual meetings</h2>
-    <p><strong class="success">Always on</strong> — Events you add under <a href="{{ url_for('meetings_list') }}">Meetings</a> are always included.</p>
+    <h2>Manual Meetings</h2>
+    <span class="badge badge-success">Always on</span>
+    <p class="muted" style="margin-top:0.5rem;">Events you add under <a href="{{ url_for('meetings_list') }}">Meetings</a> are always included in the digest.</p>
   </div>
 
   <div class="card">
-    <h2>University events (campus calendar)</h2>
-    <p>
-      Browse campus events and add the ones you care about to your calendar.
+    <h2>University Events (Campus Calendar)</h2>
+    <p class="muted">
+      Browse campus events and add ones you care about.
       {% for key, info in university_endpoints.items() %}
-        <br><a href="{{ info.base_url }}" target="_blank" rel="noopener">{{ info.name }}</a> — use CLI: <code>python -m src.main --events --university {{ key }}</code>
+        <br><a href="{{ info.base_url }}" target="_blank" rel="noopener">{{ info.name }}</a> — use CLI: <code>python3 -m src.main --events --university {{ key }}</code>
       {% endfor %}
     </p>
   </div>
 
   <div class="card">
-    <h2>iCal / UniTime (university timetables)</h2>
-    <p>
-      {% if config and config.ical.enabled %}
-        <strong class="success">On</strong> — Subscriptions below are fetched and merged.
-      {% else %}
-        <strong>Off</strong> — Set <code>ical.enabled: true</code> in <code>config.yaml</code>.
-      {% endif %}
-      Students: in UniTime open <strong>Personal Timetable → Export → Copy iCalendar URL</strong> and add it below.
-    </p>
-    <form method="post" action="{{ url_for('calendars_ical_add') }}" style="margin-top: 1rem;">
-      <label>Add iCal / UniTime URL</label>
-      <input type="url" name="url" placeholder="https://unitime.uni.edu/export?..." required>
-      <label>Name (optional, e.g. UniTime)</label>
+    <h2>iCal / UniTime</h2>
+    {% if config and config.ical.enabled %}
+      <span class="badge badge-success">On</span>
+    {% else %}
+      <span class="badge badge-off">Off</span>
+    {% endif %}
+    <p class="muted" style="margin-top:0.5rem;">Students: in UniTime open <strong>Personal Timetable &rarr; Export &rarr; Copy iCalendar URL</strong> and add it below.</p>
+
+    <form method="post" action="{{ url_for('calendars_ical_add') }}" style="margin-top:1rem;">
+      <label>iCal / UniTime URL</label>
+      <input type="url" name="url" placeholder="https://timetable.mypurdue.purdue.edu/export?..." required style="max-width:100%;">
+      <label>Name (optional)</label>
       <input type="text" name="name" placeholder="UniTime / Course schedule">
-      <button type="submit">Add subscription</button>
+      <div style="margin-top:0.75rem;"><button type="submit">Add subscription</button></div>
     </form>
+
     {% if ical_subscriptions %}
-    <ul style="margin-top: 1rem; list-style: none; padding: 0;">
+    <ul class="item-list" style="margin-top:1rem;">
       {% for sub in ical_subscriptions %}
-      <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
-        {{ sub.name or sub.url[:60] }}{% if (sub.url|length) > 60 %}...{% endif %} — <span class="muted">{{ sub.url[:80] }}{% if (sub.url|length) > 80 %}...{% endif %}</span>
-        <form method="post" action="{{ url_for('calendars_ical_remove') }}" style="display: inline; margin-left: 0.5rem;">
+      <li>
+        <div class="item-info">
+          <div class="item-title">{{ sub.name or 'iCal Feed' }}</div>
+          <div class="item-meta">{{ sub.url[:80] }}{% if (sub.url|length) > 80 %}...{% endif %}</div>
+        </div>
+        <form method="post" action="{{ url_for('calendars_ical_remove') }}">
           <input type="hidden" name="index" value="{{ loop.index0 }}">
-          <button type="submit" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Remove</button>
+          <button type="submit" class="btn-secondary btn-sm">Remove</button>
         </form>
       </li>
       {% endfor %}
     </ul>
     {% else %}
-    <p class="muted" style="margin-top: 0.75rem;">No iCal subscriptions yet. Add your UniTime or other .ics URL above.</p>
+    <p class="muted" style="margin-top:0.75rem;">No iCal subscriptions yet.</p>
     {% endif %}
   </div>
+
+<script>
+function startOutlookAuth() {
+  document.getElementById('outlook-auth').style.display = 'none';
+  document.getElementById('outlook-auth-flow').style.display = 'none';
+  document.getElementById('outlook-auth-success').style.display = 'none';
+  document.getElementById('outlook-auth-error').style.display = 'none';
+
+  fetch('/auth/outlook/start', {method: 'POST'})
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('outlook-error-msg').textContent = data.error;
+        document.getElementById('outlook-auth-error').style.display = 'block';
+        return;
+      }
+      document.getElementById('outlook-code').textContent = data.user_code;
+      document.getElementById('outlook-link').href = data.verification_uri;
+      document.getElementById('outlook-auth-flow').style.display = 'block';
+      pollOutlookStatus();
+    })
+    .catch(err => {
+      document.getElementById('outlook-error-msg').textContent = err.message;
+      document.getElementById('outlook-auth-error').style.display = 'block';
+    });
+}
+
+function pollOutlookStatus() {
+  setTimeout(() => {
+    fetch('/auth/outlook/status')
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success') {
+          document.getElementById('outlook-auth-flow').style.display = 'none';
+          document.getElementById('outlook-auth-success').style.display = 'block';
+        } else if (data.status === 'error') {
+          document.getElementById('outlook-auth-flow').style.display = 'none';
+          document.getElementById('outlook-error-msg').textContent = data.error || 'Authentication failed';
+          document.getElementById('outlook-auth-error').style.display = 'block';
+        } else {
+          pollOutlookStatus();
+        }
+      })
+      .catch(() => pollOutlookStatus());
+  }, 3000);
+}
+</script>
 {% endblock %}

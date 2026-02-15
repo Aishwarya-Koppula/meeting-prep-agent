@@ -2,25 +2,42 @@
 {% block title %}Home — Meeting Prep Agent{% endblock %}
 {% block content %}
   <h1>Meeting Prep Agent</h1>
-  <p class="muted">Run the pipeline to fetch today’s meetings, generate AI briefs, and optionally send the digest email.</p>
+  <p class="subtitle">Fetch meetings, generate AI briefs, and preview your daily digest.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>Calendar Sources</h2>
+      <p style="margin-top:0.5rem;">
+        Google: {% if google_connected %}<span class="badge badge-success">Connected</span>{% else %}<span class="badge badge-off">Not connected</span>{% endif %}
+        &nbsp; Outlook: {% if outlook_connected %}<span class="badge badge-success">Connected</span>{% else %}<span class="badge badge-warn">Not connected</span>{% endif %}
+      </p>
+      <p style="margin-top:0.5rem;"><a href="{{ url_for('calendars_list') }}">Manage calendars</a></p>
+    </div>
+    <div class="card">
+      <h2>Manual Meetings</h2>
+      <p style="margin-top:0.5rem;">{{ meetings_count }} meeting{{ 's' if meetings_count != 1 else '' }} added</p>
+      <p style="margin-top:0.5rem;"><a href="{{ url_for('meetings_add') }}">Add meeting</a></p>
+    </div>
+  </div>
 
   <div class="card">
-    <h2>Run pipeline</h2>
-    <form method="post" action="{{ url_for('run') }}">
-      <button type="submit" name="dry_run" value="0">Run now & send email</button>
-      <button type="submit" name="dry_run" value="1" class="btn btn-secondary">Preview only (no email)</button>
+    <h2>Run Pipeline</h2>
+    <p class="muted" style="margin-bottom:1rem;">Fetch events from all connected calendars, generate AI prep briefs, and preview or send the digest.</p>
+    <form method="post" action="{{ url_for('run') }}" style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <button type="submit" name="dry_run" value="1">Preview digest</button>
+      <button type="submit" name="dry_run" value="0" class="btn-success">Run &amp; send email</button>
     </form>
-    <p class="muted" style="margin-top: 0.75rem;">Preview uses the same pipeline but does not send email. Add meetings under Meetings if you have no calendar connected.</p>
   </div>
 
   {% if config %}
   <div class="card">
     <h2>Config</h2>
-    <p class="muted">Google Calendar: {{ 'on' if config.google.enabled else 'off' }} · Outlook: {{ 'on' if config.outlook.enabled else 'off' }}</p>
-  </div>
-  {% else %}
-  <div class="card">
-    <p class="error">Config not loaded. Ensure <code>config.yaml</code> and <code>.env</code> exist.</p>
+    <p class="muted">
+      Google: {{ 'on' if config.google.enabled else 'off' }} &middot;
+      Outlook: {{ 'on' if config.outlook.enabled else 'off' }} &middot;
+      iCal: {{ 'on' if config.ical.enabled else 'off' }} &middot;
+      Model: {{ config.anthropic.model }}
+    </p>
   </div>
   {% endif %}
 {% endblock %}
