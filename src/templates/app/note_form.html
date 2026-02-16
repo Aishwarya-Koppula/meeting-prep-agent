@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
   <h1>Add meeting note</h1>
-  <p class="subtitle">Log what happened — AI uses this for future prep and generates action items.</p>
+  <p class="subtitle">Log what happened — AI uses this for future prep, coaching tips, and follow-up email drafts.</p>
 </div>
 
 {% if error %}<p class="error" style="margin-bottom:1rem;">{{ error }}</p>{% endif %}
@@ -13,17 +13,41 @@
     <label>Meeting title *</label>
     <input type="text" name="meeting_title" required placeholder="e.g. 1:1 with Alex, Interview at Google">
 
+    <label>Category</label>
+    <select name="category">
+      <option value="">Select...</option>
+      <option value="interview">🎯 Interview</option>
+      <option value="networking">🤝 Networking</option>
+      <option value="class">📚 Class</option>
+      <option value="office-hours">🏫 Office Hours</option>
+      <option value="part-time">💼 Part-time / Work</option>
+      <option value="club">🎪 Club / Org</option>
+      <option value="career-fair">🎓 Career Fair</option>
+      <option value="1:1">👥 1:1</option>
+      <option value="team">👥 Team</option>
+      <option value="other">📋 Other</option>
+    </select>
+
     <label>Attendees (comma-separated)</label>
     <input type="text" name="attendees" placeholder="alex@co.com, Bob">
 
     <label>What happened? (key takeaways) *</label>
     <textarea name="content" required rows="5" placeholder="What was discussed, outcomes, your impressions..."></textarea>
 
+    <hr style="margin:1.5rem 0;border:none;border-top:1px solid #e9ecef;">
+
+    <h3 style="margin-bottom:0.75rem;font-size:1rem;color:#6c47ff;">🪞 Post-Meeting Reflection</h3>
+    <p class="subtitle" style="margin-bottom:1rem;font-size:0.8rem;">AI will analyze your reflection and give personalized coaching tips.</p>
+
     <label>What went well?</label>
     <textarea name="went_well" rows="3" placeholder="I explained my project well, good rapport with interviewer..."></textarea>
 
     <label>What didn't go well?</label>
     <textarea name="went_poorly" rows="3" placeholder="Got stuck on system design question, forgot to mention X..."></textarea>
+
+    <hr style="margin:1.5rem 0;border:none;border-top:1px solid #e9ecef;">
+
+    <h3 style="margin-bottom:0.75rem;font-size:1rem;color:#6c47ff;">📝 Outcomes</h3>
 
     <label>Action items (one per line)</label>
     <textarea name="action_items" placeholder="Send thank-you email&#10;Follow up on project X&#10;Apply to their open role"></textarea>

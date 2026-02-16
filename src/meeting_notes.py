@@ -76,9 +76,13 @@ class MeetingNotesStore:
         action_items: Optional[List[str]] = None,
         decisions: Optional[List[str]] = None,
         date: Optional[str] = None,
+        went_well: Optional[str] = None,
+        went_poorly: Optional[str] = None,
+        category: Optional[str] = None,
+        follow_up_draft: Optional[str] = None,
     ) -> dict:
         """
-        Save a meeting note.
+        Save a meeting note with optional post-meeting reflection.
 
         Args:
             meeting_title: Title of the meeting these notes are for
@@ -88,6 +92,10 @@ class MeetingNotesStore:
             action_items: List of action items from the meeting
             decisions: List of decisions made
             date: Date of the meeting (defaults to today)
+            went_well: What went well in the meeting (reflection)
+            went_poorly: What didn't go well / areas to improve
+            category: Meeting category for context
+            follow_up_draft: AI-generated follow-up email draft
 
         Returns:
             The created note dict
@@ -103,6 +111,10 @@ class MeetingNotesStore:
             "content": content.strip(),
             "action_items": action_items or [],
             "decisions": decisions or [],
+            "went_well": (went_well or "").strip(),
+            "went_poorly": (went_poorly or "").strip(),
+            "category": category or "",
+            "follow_up_draft": (follow_up_draft or "").strip(),
             "created_at": datetime.now().isoformat(),
         }
 
@@ -182,21 +194,45 @@ class MeetingNotesStore:
 
     def get_open_action_items(self) -> List[Dict[str, Any]]:
         """
-        Get all action items across all notes.
+        Get all action items across all notes with completion status.
 
         Returns a flat list of action items with their meeting context.
         """
         notes = self._load()
         items = []
         for note in notes:
-            for item in note.get("action_items", []):
+            completed = note.get("completed_actions", [])
+            for idx, item in enumerate(note.get("action_items", [])):
                 items.append({
                     "action": item,
                     "meeting": note.get("meeting_title", ""),
                     "date": note.get("date", ""),
                     "note_id": note.get("id", ""),
+                    "index": idx,
+                    "completed": item in completed,
+                    "category": note.get("category", ""),
                 })
         return items
+
+    def update_note(self, note_id: str, **fields) -> bool:
+        """
+        Update fields on an existing note.
+
+        Args:
+            note_id: The unique ID of the note to update
+            **fields: Key-value pairs to update
+
+        Returns:
+            True if updated, False if not found
+        """
+        notes = self._load()
+        for note in notes:
+            if note.get("id") == note_id:
+                note.update(fields)
+                self._save(notes)
+                logger.info("Updated note %s: %s", note_id, list(fields.keys()))
+                return True
+        return False
 
     def remove_note(self, note_id: str) -> bool:
         """Remove a note by its ID."""

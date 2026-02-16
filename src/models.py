@@ -38,6 +38,11 @@ class MeetingCategory(str, Enum):
     NETWORKING = "networking"
     STANDUP = "standup"
     ALL_HANDS = "all-hands"
+    OFFICE_HOURS = "office-hours"
+    CLASS = "class"
+    PART_TIME = "part-time"
+    CLUB = "club"
+    CAREER_FAIR = "career-fair"
     OTHER = "other"
 
 

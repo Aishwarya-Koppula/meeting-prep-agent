@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
   <h1>📝 Meeting Notes</h1>
-  <p class="subtitle">Log notes after meetings. AI uses them to prep for similar future meetings.</p>
+  <p class="subtitle">Log notes after meetings. AI uses them for future prep, coaching, and follow-up drafts.</p>
 </div>
 
 <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
@@ -15,26 +15,61 @@
 </div>
 
 {% if notes %}
-<div class="card">
-  <ul class="item-list">
-    {% for n in notes %}
-    <li>
-      <div class="item-info">
-        <div class="item-title">{{ n.meeting_title }}</div>
-        <div class="item-meta">{{ n.date }} {% if n.attendees %}· {{ n.attendees|join(", ") }}{% endif %}</div>
-        <div class="item-meta" style="margin-top:0.2rem;">{{ n.content[:200] }}{% if n.content|length > 200 %}...{% endif %}</div>
-        {% if n.action_items %}
-        <div style="margin-top:0.35rem;">
-          {% for a in n.action_items %}
-          <span class="badge badge-warn" style="margin-right:0.25rem;margin-bottom:0.2rem;">{{ a[:40] }}{% if a|length > 40 %}...{% endif %}</span>
-          {% endfor %}
-        </div>
-        {% endif %}
-      </div>
-    </li>
+{% for n in notes %}
+<div class="card" style="margin-bottom:1rem;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div>
+      <div class="item-title" style="font-size:1.05rem;font-weight:600;">{{ n.meeting_title }}</div>
+      <div class="item-meta">{{ n.date }} {% if n.attendees %}· {{ n.attendees|join(", ") }}{% endif %}{% if n.category %} · <span class="badge cat-{{ n.category }}">{{ n.category }}</span>{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="item-meta" style="margin-top:0.5rem;">{{ n.content[:300] }}{% if n.content|length > 300 %}...{% endif %}</div>
+
+  {% if n.went_well or n.went_poorly %}
+  <div style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+    {% if n.went_well %}
+    <div style="background:#f0fdf4;padding:0.6rem 0.75rem;border-radius:8px;font-size:0.82rem;">
+      <strong style="color:#16a34a;">✅ Went well</strong><br>{{ n.went_well[:150] }}
+    </div>
+    {% endif %}
+    {% if n.went_poorly %}
+    <div style="background:#fef2f2;padding:0.6rem 0.75rem;border-radius:8px;font-size:0.82rem;">
+      <strong style="color:#dc2626;">⚠️ Improve</strong><br>{{ n.went_poorly[:150] }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if n.action_items %}
+  <div style="margin-top:0.5rem;">
+    {% for a in n.action_items %}
+    <span class="badge badge-warn" style="margin-right:0.25rem;margin-bottom:0.2rem;">{{ a[:40] }}{% if a|length > 40 %}...{% endif %}</span>
     {% endfor %}
-  </ul>
+  </div>
+  {% endif %}
+
+  {% if n.follow_up_draft %}
+  <details style="margin-top:0.75rem;">
+    <summary style="cursor:pointer;font-size:0.85rem;color:#6c47ff;font-weight:500;">📧 View Follow-up Draft</summary>
+    <div style="background:#f8f7ff;padding:0.75rem;border-radius:8px;margin-top:0.5rem;font-size:0.85rem;white-space:pre-wrap;">{{ n.follow_up_draft }}</div>
+  </details>
+  {% endif %}
+
+  <div style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+    {% if n.went_well or n.went_poorly %}
+    <button type="button" class="btn-secondary" style="font-size:0.75rem;padding:0.3rem 0.6rem;"
+            onclick="getCoaching('{{ n.id }}', this)">🤖 Get AI Coaching</button>
+    {% endif %}
+    {% if not n.follow_up_draft %}
+    <button type="button" class="btn-secondary" style="font-size:0.75rem;padding:0.3rem 0.6rem;"
+            onclick="generateFollowup('{{ n.id }}', this)">📧 Generate Follow-up</button>
+    {% endif %}
+  </div>
+  <div id="coaching-{{ n.id }}" style="display:none;margin-top:0.5rem;background:#f0f4ff;padding:0.75rem;border-radius:8px;font-size:0.85rem;"></div>
+  <div id="followup-{{ n.id }}" style="display:none;margin-top:0.5rem;background:#f8f7ff;padding:0.75rem;border-radius:8px;font-size:0.85rem;"></div>
 </div>
+{% endfor %}
 {% else %}
 <div class="card empty">
   <div class="emoji">📝</div>
@@ -42,4 +77,52 @@
   <p class="muted">After a meeting, add notes to help AI prep for similar meetings next time.</p>
 </div>
 {% endif %}
+
+<script>
+async function getCoaching(noteId, btn) {
+  btn.disabled = true;
+  btn.textContent = '🤖 Analyzing...';
+  try {
+    const res = await fetch(`/notes/${noteId}/ai-coaching`, {method: 'POST'});
+    const data = await res.json();
+    const el = document.getElementById(`coaching-${noteId}`);
+    if (data.coaching) {
+      el.style.display = 'block';
+      el.innerHTML = '<strong style="color:#6c47ff;">🤖 AI Coaching Tips:</strong><br>' + data.coaching.replace(/\n/g, '<br>');
+      btn.textContent = '✅ Coaching loaded';
+    } else {
+      el.style.display = 'block';
+      el.innerHTML = '<span style="color:#dc2626;">Error: ' + (data.error || 'Unknown error') + '</span>';
+      btn.disabled = false;
+      btn.textContent = '🤖 Get AI Coaching';
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '🤖 Get AI Coaching';
+  }
+}
+
+async function generateFollowup(noteId, btn) {
+  btn.disabled = true;
+  btn.textContent = '📧 Generating...';
+  try {
+    const res = await fetch(`/notes/${noteId}/generate-followup`, {method: 'POST'});
+    const data = await res.json();
+    const el = document.getElementById(`followup-${noteId}`);
+    if (data.draft) {
+      el.style.display = 'block';
+      el.innerHTML = '<strong style="color:#6c47ff;">📧 Follow-up Draft:</strong><br><pre style="white-space:pre-wrap;margin-top:0.5rem;font-family:inherit;">' + data.draft + '</pre>';
+      btn.textContent = '✅ Draft generated';
+    } else {
+      el.style.display = 'block';
+      el.innerHTML = '<span style="color:#dc2626;">Error: ' + (data.error || 'Unknown error') + '</span>';
+      btn.disabled = false;
+      btn.textContent = '📧 Generate Follow-up';
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '📧 Generate Follow-up';
+  }
+}
+</script>
 {% endblock %}

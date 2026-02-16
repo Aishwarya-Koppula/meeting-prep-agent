@@ -230,11 +230,16 @@ class EventProcessor:
             "one-on-one": ["1:1", "1-1", "one on one", "1on1"],
             "review": ["review", "feedback", "retro", "retrospective"],
             "planning": ["planning", "sprint", "roadmap", "strategy"],
-            "interview": ["interview", "screening", "hiring"],
+            "interview": ["interview", "screening", "hiring", "behavioral", "technical round"],
             "client": ["client", "customer", "external", "vendor"],
             "all-hands": ["all-hands", "all hands", "town hall", "company meeting"],
-            "networking": ["networking", "coffee chat", "meet & greet", "intro"],
+            "networking": ["networking", "coffee chat", "meet & greet", "intro", "informational"],
             "workshop": ["workshop", "training", "onboarding"],
+            "office-hours": ["office hours", "oh ", "office hr", "prof ", "professor", "instructor", "ta "],
+            "class": ["lecture", "class", "recitation", "lab section", "seminar", "course"],
+            "part-time": ["shift", "part-time", "part time", "work schedule"],
+            "club": ["club", "org meeting", "organization", "student govt", "eboard", "e-board", "general body"],
+            "career-fair": ["career fair", "job fair", "recruiting event", "employer info", "info session"],
         }
 
         for tag, keywords in tag_keywords.items():
@@ -263,6 +268,12 @@ class EventProcessor:
 
         if "interview" in tags:
             category = MeetingCategory.INTERVIEW
+        elif "career-fair" in tags:
+            category = MeetingCategory.CAREER_FAIR
+        elif "office-hours" in tags:
+            category = MeetingCategory.OFFICE_HOURS
+        elif "class" in tags:
+            category = MeetingCategory.CLASS
         elif "standup" in tags:
             category = MeetingCategory.STANDUP
         elif "all-hands" in tags:
@@ -271,6 +282,10 @@ class EventProcessor:
             category = MeetingCategory.CLIENT
         elif "networking" in tags:
             category = MeetingCategory.NETWORKING
+        elif "part-time" in tags:
+            category = MeetingCategory.PART_TIME
+        elif "club" in tags:
+            category = MeetingCategory.CLUB
         elif event.is_one_on_one:
             category = MeetingCategory.ONE_ON_ONE
         elif event.attendee_count >= 3:
@@ -300,10 +315,15 @@ class EventProcessor:
         # Category weight (0.30)
         category_scores = {
             MeetingCategory.INTERVIEW: 1.0,
+            MeetingCategory.CAREER_FAIR: 0.95,
             MeetingCategory.CLIENT: 0.9,
-            MeetingCategory.ONE_ON_ONE: 0.7,
             MeetingCategory.NETWORKING: 0.7,
+            MeetingCategory.ONE_ON_ONE: 0.7,
+            MeetingCategory.OFFICE_HOURS: 0.65,
             MeetingCategory.TEAM: 0.5,
+            MeetingCategory.CLUB: 0.45,
+            MeetingCategory.CLASS: 0.4,
+            MeetingCategory.PART_TIME: 0.35,
             MeetingCategory.ALL_HANDS: 0.3,
             MeetingCategory.STANDUP: 0.2,
             MeetingCategory.OTHER: 0.4,

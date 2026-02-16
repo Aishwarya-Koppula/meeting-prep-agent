@@ -70,6 +70,9 @@ class MeetingStore:
         location: Optional[str] = None,
         meeting_link: Optional[str] = None,
         is_recurring: bool = False,
+        category: Optional[str] = None,
+        person_linkedin: Optional[str] = None,
+        person_notes: Optional[str] = None,
     ) -> dict:
         """
         Add a new meeting to the store.
@@ -83,6 +86,9 @@ class MeetingStore:
             location: Physical location or room name
             meeting_link: Video call URL (Zoom, Meet, Teams)
             is_recurring: Whether this is a recurring meeting
+            category: Meeting category (interview, networking, class, etc.)
+            person_linkedin: LinkedIn URL for key person in the meeting
+            person_notes: Notes about the person (role, company, context)
 
         Returns:
             The created meeting dict (with generated ID)
@@ -97,6 +103,9 @@ class MeetingStore:
             "location": location or "",
             "meeting_link": meeting_link or "",
             "is_recurring": is_recurring,
+            "category": category or "",
+            "person_linkedin": person_linkedin or "",
+            "person_notes": person_notes or "",
             "source": "manual",
             "created_at": datetime.now().isoformat(),
         }

@@ -292,6 +292,9 @@ def meetings_add():
         location=request.form.get("location") or None,
         meeting_link=request.form.get("meeting_link") or None,
         is_recurring=request.form.get("is_recurring") == "on",
+        category=request.form.get("category") or None,
+        person_linkedin=request.form.get("person_linkedin") or None,
+        person_notes=request.form.get("person_notes") or None,
     )
     return redirect(url_for("meetings_list"))
 
@@ -381,8 +384,63 @@ def notes_add():
         action_items=action_items,
         decisions=decisions,
         date=request.form.get("date") or datetime.now().strftime("%Y-%m-%d"),
+        went_well=request.form.get("went_well") or None,
+        went_poorly=request.form.get("went_poorly") or None,
+        category=request.form.get("category") or None,
     )
     return redirect(url_for("notes_list"))
+
+
+@app.route("/notes/<note_id>/generate-followup", methods=["POST"])
+def notes_generate_followup(note_id):
+    """Generate an AI follow-up email draft based on meeting notes."""
+    notes_store = MeetingNotesStore()
+    notes = notes_store.get_all_notes()
+    note = next((n for n in notes if n.get("id") == note_id), None)
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
+
+    config = _config()
+    if not config or not config.anthropic.api_key:
+        return jsonify({"error": "Claude API key not configured"}), 400
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=config.anthropic.api_key)
+
+        prompt = f"""Generate a professional follow-up email based on this meeting.
+
+MEETING: {note.get('meeting_title', '')}
+DATE: {note.get('date', '')}
+ATTENDEES: {', '.join(note.get('attendees', []))}
+NOTES: {note.get('content', '')}
+DECISIONS: {', '.join(note.get('decisions', []))}
+ACTION ITEMS: {', '.join(note.get('action_items', []))}
+WHAT WENT WELL: {note.get('went_well', '')}
+
+Write a concise, professional follow-up email that:
+1. Thanks attendees for their time
+2. Summarizes key decisions made
+3. Lists action items with owners (if identifiable)
+4. Proposes next steps
+
+Keep it brief and actionable. Output ONLY the email body text, no subject line."""
+
+        response = client.messages.create(
+            model=config.anthropic.model,
+            max_tokens=800,
+            temperature=0.3,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        draft = response.content[0].text.strip()
+
+        # Save the draft back to the note
+        notes_store.update_note(note_id, follow_up_draft=draft)
+
+        return jsonify({"draft": draft})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/notes/search")
@@ -398,6 +456,76 @@ def notes_search():
 def notes_action_items():
     items = MeetingNotesStore().get_open_action_items()
     return render_template("action_items.html", items=items)
+
+
+@app.route("/notes/action-items/complete", methods=["POST"])
+def action_item_complete():
+    """Mark an action item as completed."""
+    note_id = request.form.get("note_id", "")
+    action_index = request.form.get("action_index", "")
+    store = MeetingNotesStore()
+    notes = store.get_all_notes()
+    for note in notes:
+        if note.get("id") == note_id:
+            try:
+                idx = int(action_index)
+                completed = note.get("completed_actions", [])
+                item_text = note["action_items"][idx]
+                if item_text not in completed:
+                    completed.append(item_text)
+                    store.update_note(note_id, completed_actions=completed)
+            except (ValueError, IndexError):
+                pass
+            break
+    return redirect(url_for("notes_action_items"))
+
+
+@app.route("/notes/<note_id>/ai-coaching", methods=["POST"])
+def notes_ai_coaching(note_id):
+    """Generate AI coaching feedback based on meeting reflection."""
+    notes_store = MeetingNotesStore()
+    notes = notes_store.get_all_notes()
+    note = next((n for n in notes if n.get("id") == note_id), None)
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
+
+    went_well = note.get("went_well", "")
+    went_poorly = note.get("went_poorly", "")
+    if not went_well and not went_poorly:
+        return jsonify({"error": "No reflection data to analyze"}), 400
+
+    config = _config()
+    if not config or not config.anthropic.api_key:
+        return jsonify({"error": "Claude API key not configured"}), 400
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=config.anthropic.api_key)
+
+        prompt = f"""You are a meeting coach for a college student. Based on their post-meeting reflection, give brief, actionable coaching advice.
+
+MEETING: {note.get('meeting_title', '')}
+CATEGORY: {note.get('category', 'general')}
+
+WHAT WENT WELL:
+{went_well or 'Not provided'}
+
+WHAT DIDN'T GO WELL:
+{went_poorly or 'Not provided'}
+
+Give 2-3 specific, encouraging tips for improvement. Be concise and student-friendly. Focus on actionable changes for next time. Output as plain text bullet points."""
+
+        response = client.messages.create(
+            model=config.anthropic.model,
+            max_tokens=400,
+            temperature=0.4,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        coaching = response.content[0].text.strip()
+        return jsonify({"coaching": coaching})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ── Weekly view ─────────────────────────────────────────────────

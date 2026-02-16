@@ -16,13 +16,22 @@
     {% for m in meetings %}
     <li>
       <div class="item-info">
-        <div class="item-title">{{ m.title }}</div>
+        <div class="item-title">
+          {{ m.title }}
+          {% if m.category %}<span class="badge cat-{{ m.category }}" style="margin-left:0.4rem;">{{ m.category }}</span>{% endif %}
+        </div>
         <div class="item-meta">
           {{ m.start_time[:16] | replace("T", " at ") if m.start_time else "No date" }}
           {% if m.attendees %} · {{ m.attendees|join(", ") }}{% endif %}
           {% if m.location %} · {{ m.location }}{% endif %}
         </div>
         {% if m.description %}<div class="item-meta" style="margin-top:0.25rem;">{{ m.description[:120] }}{% if m.description|length > 120 %}...{% endif %}</div>{% endif %}
+        {% if m.person_linkedin or m.person_notes %}
+        <div style="margin-top:0.35rem;font-size:0.8rem;color:#6c47ff;">
+          👤 {% if m.person_notes %}{{ m.person_notes[:80] }}{% endif %}
+          {% if m.person_linkedin %} · <a href="{{ m.person_linkedin }}" target="_blank" style="color:#6c47ff;">LinkedIn</a>{% endif %}
+        </div>
+        {% endif %}
       </div>
       <form method="post" action="{{ url_for('meetings_remove', mid=m.id) }}">
         <button type="submit" class="btn-secondary btn-sm">Remove</button>

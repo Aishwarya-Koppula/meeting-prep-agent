@@ -6,25 +6,56 @@
   <p class="subtitle">Pending follow-ups and tasks from all your meetings. <a href="{{ url_for('notes_list') }}">View all notes</a></p>
 </div>
 
-{% if items %}
-<div class="card">
+{% set pending = items|selectattr("completed", "equalto", false)|list %}
+{% set done = items|selectattr("completed")|list %}
+
+{% if pending %}
+<div class="card" style="margin-bottom:1rem;">
+  <h3 style="margin-bottom:0.75rem;font-size:0.95rem;color:#6c47ff;">📋 Pending ({{ pending|length }})</h3>
   <ul class="item-list">
-    {% for item in items %}
-    <li>
-      <div class="item-info">
+    {% for item in pending %}
+    <li style="display:flex;align-items:center;gap:0.75rem;">
+      <form method="post" action="{{ url_for('action_item_complete') }}" style="margin:0;">
+        <input type="hidden" name="note_id" value="{{ item.note_id }}">
+        <input type="hidden" name="action_index" value="{{ item.index }}">
+        <button type="submit" style="background:none;border:2px solid #ddd;border-radius:6px;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" title="Mark complete">
+          <span style="font-size:14px;color:transparent;">✓</span>
+        </button>
+      </form>
+      <div class="item-info" style="flex:1;">
         <div class="item-title">{{ item.action }}</div>
-        <div class="item-meta">From: {{ item.meeting }} · {{ item.date }}</div>
+        <div class="item-meta">From: {{ item.meeting }} · {{ item.date }}{% if item.category %} · <span class="badge cat-{{ item.category }}">{{ item.category }}</span>{% endif %}</div>
       </div>
       <span class="badge badge-warn">Pending</span>
     </li>
     {% endfor %}
   </ul>
 </div>
-{% else %}
+{% elif not done %}
 <div class="card empty">
   <div class="emoji">🎉</div>
   <p>All caught up!</p>
   <p class="muted">No pending action items. Add notes with action items after meetings.</p>
+</div>
+{% endif %}
+
+{% if done %}
+<div class="card">
+  <h3 style="margin-bottom:0.75rem;font-size:0.95rem;color:#16a34a;">✅ Completed ({{ done|length }})</h3>
+  <ul class="item-list">
+    {% for item in done %}
+    <li style="display:flex;align-items:center;gap:0.75rem;opacity:0.6;">
+      <div style="background:#16a34a;border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:14px;color:white;">✓</span>
+      </div>
+      <div class="item-info" style="flex:1;">
+        <div class="item-title" style="text-decoration:line-through;">{{ item.action }}</div>
+        <div class="item-meta">From: {{ item.meeting }} · {{ item.date }}</div>
+      </div>
+      <span class="badge" style="background:#dcfce7;color:#16a34a;">Done</span>
+    </li>
+    {% endfor %}
+  </ul>
 </div>
 {% endif %}
 {% endblock %}

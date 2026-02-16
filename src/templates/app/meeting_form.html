@@ -30,14 +30,16 @@
     <label>Category</label>
     <select name="category">
       <option value="">Auto-detect</option>
-      <option value="interview">Interview</option>
-      <option value="networking">Networking</option>
-      <option value="class">Class</option>
-      <option value="office_hours">Office Hours</option>
-      <option value="work">Part-time / Work</option>
-      <option value="club">Club / Org</option>
-      <option value="career_fair">Career Fair / Event</option>
-      <option value="other">Other</option>
+      <option value="interview">🎯 Interview</option>
+      <option value="networking">🤝 Networking</option>
+      <option value="class">📚 Class</option>
+      <option value="office-hours">🏫 Office Hours</option>
+      <option value="part-time">💼 Part-time / Work</option>
+      <option value="club">🎪 Club / Org</option>
+      <option value="career-fair">🎓 Career Fair</option>
+      <option value="1:1">👥 1:1</option>
+      <option value="team">👥 Team</option>
+      <option value="other">📋 Other</option>
     </select>
 
     <label>Attendees (comma-separated)</label>
@@ -55,6 +57,17 @@
     <label style="display:flex;align-items:center;gap:0.5rem;flex-direction:row;text-transform:none;font-size:0.875rem;">
       <input type="checkbox" name="is_recurring"> Recurring meeting
     </label>
+
+    <hr style="margin:1.5rem 0;border:none;border-top:1px solid #e9ecef;">
+
+    <h3 style="margin-bottom:0.75rem;font-size:1rem;color:#6c47ff;">👤 Person Lookup (optional)</h3>
+    <p class="subtitle" style="margin-bottom:1rem;font-size:0.8rem;">Add info about the key person — helps AI personalize your prep.</p>
+
+    <label>LinkedIn URL</label>
+    <input type="url" name="person_linkedin" placeholder="https://linkedin.com/in/alex-smith">
+
+    <label>Person notes</label>
+    <textarea name="person_notes" rows="2" placeholder="e.g. SWE at Google, met at Purdue career fair, interested in ML"></textarea>
 
     <div style="margin-top:1.25rem;display:flex;gap:0.5rem;">
       <button type="submit">Save meeting</button>

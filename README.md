@@ -1,75 +1,78 @@
-# AI Meeting Prep Agent
+# AI Meeting Prep Agent for Students
 
-**Never walk into a meeting unprepared again.**
+**Your centralized calendar + AI-powered meeting coach.**
 
-Automated meeting intelligence system that aggregates events from **multiple calendar sources** (Google Calendar, Outlook, Microsoft Teams, iCal/UniTime, university events, + manual input), generates AI-powered prep briefs via Claude, and delivers a prioritized daily digest to your inbox every morning.
+A student-focused web app that aggregates all your calendars in one place, uses AI to classify meetings, generate prep briefs, provide post-meeting coaching, and draft follow-up emails. Built for busy college students juggling classes, interviews, networking, clubs, and part-time work.
 
-Includes a **full web app** with weekly calendar view, meeting notes, reference docs, and action item tracking.
-
-**100% free to run** -- uses free-tier APIs and $5 free Claude credit (~500 briefs).
+**100% free to run** -- uses free-tier APIs and $5 free Claude credit (~500 AI actions).
 
 ---
 
-## What It Does
+## The Problem
 
-Every morning at 8 AM, you receive an email with:
+Students have meetings scattered across 5+ calendars (Google, Outlook, iCloud, UniTime, school events), each needing different preparation. An interview needs company research. A networking coffee chat needs talking points. Office hours need specific questions ready. There's no single place that brings it all together and helps you prepare.
 
-- AI-generated context summaries for each meeting
-- Talking points categorized by type (discussion, follow-up, update)
-- Suggested questions to ask
-- Priority scoring (high/medium/low) based on meeting type, attendees, and duration
-- One-click join links for virtual meetings (Meet, Teams, Zoom)
+## The Solution
 
-Works with **all your calendars at once** -- Google Calendar, Outlook, Teams meetings, UniTime course schedules, and manually added events are merged, deduplicated, and prioritized together.
+**Connect** all your calendars -> **See** everything in one weekly view -> **Classify** each meeting (AI + manual) -> **Prep** with AI-generated briefs -> **Reflect** after meetings -> **Act** on follow-ups.
 
 ---
 
 ## Features
 
-**Multi-Calendar Aggregation**
-- Google Calendar (OAuth 2.0, multi-calendar support)
-- Outlook Calendar (Microsoft Graph API)
-- Microsoft Teams meetings (auto-detected from Outlook)
-- **iCal / UniTime** -- subscribe to university course timetables via .ics URL
-- University events discovery (Purdue, via Localist API)
-- Manual meeting input via CLI (`--add-meeting`) or web app
-- Smart cross-source deduplication (same meeting in multiple sources = one brief)
-- Calendar options -- enable/disable each source in `config.yaml` or in the web app (Calendars page)
+### Centralized Calendar
+- **Google Calendar** (OAuth 2.0)
+- **Outlook Calendar** (iCal subscription - works with Purdue/school accounts)
+- **iCloud Calendar** (published calendar URL)
+- **UniTime** (course timetable .ics export)
+- **University Events** (Purdue Localist API)
+- **Manual Meetings** (coffee chats, study groups, phone calls)
+- Smart cross-source deduplication
 
-**AI-Powered Prep Briefs**
-- Claude API with category-specific prompts (1:1, Team, Client, Interview, Networking, Standup, All-Hands)
-- Auto-injects relevant reference docs and past meeting notes for richer context
-- Talking points, questions to ask, context notes, preparation time estimates
-- Graceful fallbacks when API is unavailable
+### AI Meeting Classification
+Categories tuned for student life:
+- **Interview** - Technical, behavioral, phone screens
+- **Networking** - Coffee chats, informational interviews, mentorship
+- **Class** - Lectures, recitations, labs, seminars
+- **Office Hours** - Professor/TA meetings
+- **Part-time / Work** - Shifts, work meetings
+- **Club / Org** - Student orgs, e-board, general body
+- **Career Fair** - Recruiting events, info sessions
+- **1:1, Team, Client, Standup, All-Hands**
 
-**Reference Docs**
-- Tag PDFs, text files, or Google Docs to meeting categories (interview, networking, etc.)
-- Inline docs (paste content directly) for quick reference
-- Ordered per category -- AI uses them in priority order
-- Redundancy detection across docs in same category
+AI auto-classifies from title keywords + manual override in forms.
 
-**Meeting Notes & Action Items**
-- Store notes per meeting with attendees, decisions, action items
-- Search across all past notes by keyword
-- Track open action items across all meetings
-- AI auto-references relevant past notes when prepping similar meetings
+### AI-Powered Prep Briefs
+- Category-specific prompts (interview prep is different from networking prep)
+- Auto-injects reference docs and past meeting notes
+- Talking points, suggested questions, context notes
+- Priority scoring based on category, attendees, duration, and more
 
-**Web App (Flask)**
-- Run pipeline, add meetings, manage docs & notes -- all from the browser
-- **Weekly calendar view** -- 7-day grid with color-coded events from all sources
-- Calendars page to manage iCal/UniTime subscriptions
-- Action items dashboard
+### Post-Meeting Reflection
+- Log "What went well" and "What didn't go well" after each meeting
+- **AI Coaching** -- get personalized tips based on your reflection
+- Track improvement over time
 
-**Intelligent Processing**
-- Filter out noise (focus blocks, OOO, lunch, short events)
-- Priority scoring: category (30%), attendees (20%), duration (15%), external attendees (15%), non-recurring (10%), has agenda (10%)
-- Sorted highest priority first
+### Follow-Up Email Drafts
+- One-click AI-generated follow-up emails from meeting notes
+- Summarizes decisions, action items, and next steps
+- Professional tone, ready to send
 
-**Delivery**
-- Beautiful responsive HTML email digest
-- Color-coded priority bars (red/orange/green)
-- Join meeting buttons
-- Daily scheduling via APScheduler (8 AM weekdays)
+### Person Lookup
+- Add LinkedIn URL and context notes for key people in meetings
+- AI personalizes prep based on who you're meeting with
+
+### Action Items Dashboard
+- Track pending tasks from all meetings in one place
+- Mark items complete with one click
+- See completed vs pending at a glance
+- Category badges for context
+
+### Beautiful Web App
+- Colorful, student-friendly UI (purple/pink theme, Inter font)
+- Weekly calendar view with color-coded sources
+- Mobile-responsive design
+- No terminal required -- everything through the browser
 
 ---
 
@@ -78,9 +81,6 @@ Works with **all your calendars at once** -- Google Calendar, Outlook, Teams mee
 ### Prerequisites
 - Python 3.9+
 - Claude API key ([sign up for $5 free credit](https://console.anthropic.com))
-- Gmail account with App Password for sending emails
-- (Optional) Google Calendar credentials
-- (Optional) Microsoft Azure app registration for Outlook/Teams
 
 ### Installation
 
@@ -102,9 +102,6 @@ cp .env.example .env
 2. Edit `.env` with your credentials:
 ```
 ANTHROPIC_API_KEY=sk-ant-your-key-here
-EMAIL_SENDER=you@gmail.com
-EMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
-EMAIL_RECIPIENT=you@gmail.com
 ```
 
 3. Review `config.yaml` -- enable/disable calendar sources:
@@ -112,55 +109,16 @@ EMAIL_RECIPIENT=you@gmail.com
 google:
   enabled: true        # Google Calendar
 outlook:
-  enabled: false      # Outlook + Teams (set true + add OUTLOOK_CLIENT_ID to .env)
+  enabled: false       # Outlook Graph API (requires admin consent for .edu)
 ical:
-  enabled: true       # iCal / UniTime (add URLs in web app or ical_sources.json)
+  enabled: true        # iCal subscriptions (Outlook, iCloud, UniTime)
 ```
 
-### Usage
+### Run
 
-**Web app (recommended):**
 ```bash
 python3 -m src.app
 # Open http://127.0.0.1:5000
-```
-
-Pages: Home (run pipeline) | Calendars | Meetings | Reference docs | Notes | Action items | Weekly view
-
-**CLI:**
-```bash
-# Add a meeting manually
-python3 -m src.main --add-meeting
-
-# List your manual meetings
-python3 -m src.main --list-meetings
-
-# Preview your daily digest (no email sent)
-python3 -m src.main --dry-run
-
-# Run once and send the email
-python3 -m src.main --run
-
-# Start the daily scheduler (runs at 8 AM)
-python3 -m src.main --schedule
-
-# Remove a manual meeting
-python3 -m src.main --remove-meeting <ID>
-
-# Browse Purdue university events and add ones you're interested in
-python3 -m src.main --events
-
-# Reference docs
-python3 -m src.main --tag-doc resume.pdf interview
-python3 -m src.main --add-inline-doc
-python3 -m src.main --list-docs
-python3 -m src.main --detect-redundancy interview
-
-# Meeting notes
-python3 -m src.main --add-note
-python3 -m src.main --list-notes
-python3 -m src.main --search-notes "budget"
-python3 -m src.main --action-items
 ```
 
 ---
@@ -172,90 +130,103 @@ python3 -m src.main --action-items
 2. Create a project -> Enable "Google Calendar API"
 3. Credentials -> OAuth 2.0 Client ID -> Desktop App
 4. Download JSON, save as `credentials.json` in project root
-5. First run opens browser for authorization
+5. Add yourself as a test user in OAuth consent screen
+6. First run opens browser for authorization
 
-### Outlook + Teams (free)
-1. Go to [Azure Portal](https://portal.azure.com) -> App Registrations
-2. New Registration -> Name: "Meeting Prep Agent" -> Personal + Org accounts
-3. API Permissions -> Add: `Calendars.Read`, `OnlineMeetings.Read`
-4. Authentication -> Allow public client flows -> Yes
-5. Copy the Application (client) ID to `.env`:
-   ```
-   OUTLOOK_CLIENT_ID=your-client-id-here
-   ```
-6. Set `enabled: true` under `outlook:` in `config.yaml`
-7. First run shows a device code -- open the URL and enter the code
+### Outlook Calendar (via iCal - recommended for .edu)
+1. Open Outlook on the web (outlook.office365.com)
+2. Settings -> Calendar -> Shared calendars -> Publish a calendar
+3. Copy the ICS link
+4. In the web app: Calendars -> Add iCal subscription with the URL
+
+> **Why iCal instead of Graph API?** School Azure accounts (like Purdue) require admin consent for third-party apps. The iCal published link works without any admin approval and syncs every ~30 minutes.
+
+### iCloud Calendar
+1. Open Calendar app on Mac -> Right-click a calendar -> Share Calendar
+2. Check "Public Calendar" and copy the URL (starts with `webcal://`)
+3. In the web app: Calendars -> Add iCal subscription
+   - Replace `webcal://` with `https://`
+
+### UniTime (course timetable)
+1. Log in to your university's UniTime
+2. Personal Timetable -> Export -> Copy iCalendar URL
+3. In the web app: Calendars -> Add iCal subscription
 
 ### Claude API Key
 1. Go to [Anthropic Console](https://console.anthropic.com/settings/keys)
-2. Sign up for $5 free credit (~500 briefs)
-3. Create an API key and add to `.env`:
-   ```
-   ANTHROPIC_API_KEY=sk-ant-your-key-here
-   ```
+2. Sign up for $5 free credit (~500 AI actions)
+3. Create an API key and add to `.env`
 
-### Gmail App Password (for sending emails)
+### Gmail App Password (optional, for email digest)
 1. Go to [Google Account Security](https://myaccount.google.com/security)
 2. Enable 2-Step Verification
 3. Search "App Passwords" -> Generate for "Mail"
 4. Use the 16-character password as `EMAIL_APP_PASSWORD`
-
-### iCal / UniTime (university students)
-If your school uses **UniTime** for scheduling:
-1. Log in to UniTime -> Personal Timetable -> Export -> Copy iCalendar URL
-2. In the **web app** go to **Calendars** -> add that URL under "iCal / UniTime"
-   Or create `ical_sources.json`: `{"subscriptions": [{"url": "PASTE_URL_HERE", "name": "UniTime"}]}`
-3. Ensure `ical.enabled: true` in `config.yaml` (default)
-
-Any other **iCal (.ics) feed URL** (course schedules, event calendars) can be added the same way.
-
-### University Events - Purdue (no setup needed)
-```bash
-python3 -m src.main --events
-# Fetches events from events.purdue.edu -- pick which ones to attend
-```
-Uses the public Localist API -- no credentials required, completely free.
-
-### Manual Meetings (no setup needed)
-```bash
-python3 -m src.main --add-meeting
-# Or use the web app: http://127.0.0.1:5000/meetings/add
-```
 
 ---
 
 ## How It Works
 
 ```
+                        CONNECT
 Google Calendar ──────┐
-Outlook Calendar ─────┤
-Microsoft Teams ──────┤── Merge ── Filter ── Dedup ── Classify ── Score Priority
-iCal / UniTime ───────┤                                    │
-University Events ────┤                                    │
-Manual Meetings ──────┘                                    │
-                                                           v
-                                              ┌─────────────────────┐
-                                              │  Claude AI API      │
-                                              │  + Reference Docs   │
-                                              │  + Past Notes       │
-                                              └─────────┬───────────┘
-                                                        │
-                                              ┌─────────v───────────┐
-                                              │  HTML Email Digest  │
-                                              │  (Gmail SMTP @ 8AM) │
-                                              └─────────────────────┘
+Outlook (iCal) ───────┤
+iCloud Calendar ──────┤── Merge ── Filter ── Dedup
+UniTime Schedule ─────┤
+University Events ────┤
+Manual Meetings ──────┘
+                         │
+                    CLASSIFY & PREP
+                         │
+              ┌──────────v──────────┐
+              │  AI Classification  │
+              │  (Interview, Class, │
+              │   Networking, etc.) │
+              └──────────┬──────────┘
+                         │
+              ┌──────────v──────────┐
+              │  Claude AI Briefs   │
+              │  + Reference Docs   │
+              │  + Past Notes       │
+              │  + Person Context   │
+              └──────────┬──────────┘
+                         │
+                    REFLECT & ACT
+                         │
+              ┌──────────v──────────┐
+              │  Post-Meeting       │
+              │  - Reflection       │
+              │  - AI Coaching      │
+              │  - Follow-up Draft  │
+              │  - Action Items     │
+              └─────────────────────┘
 ```
 
-**Tech Stack:**
-- **Python 3.9+** with Pydantic models for type safety
-- **Flask** web app with dark-themed UI
-- **Claude API** (Anthropic) for AI brief generation
-- **Google Calendar API** (OAuth 2.0) for Google events
-- **Microsoft Graph API** for Outlook + Teams events
-- **Localist API** for university events (Purdue)
-- **APScheduler** for daily cron scheduling
-- **Jinja2** for responsive HTML email templates
-- **Gmail SMTP** for email delivery
+---
+
+## Workflow
+
+| Step | What | Where |
+|------|-------|-------|
+| 1. Connect | Link all your calendars | Calendars page |
+| 2. See | View unified weekly schedule | Weekly View |
+| 3. Classify | AI auto-classifies + manual override | Auto + Meeting form |
+| 4. Prep | Run AI pipeline for meeting briefs | Home -> Run Pipeline |
+| 5. Reflect | Log what went well/poorly | Notes -> Add Note |
+| 6. Act | Track action items + send follow-ups | Action Items + Notes |
+
+---
+
+## Tech Stack
+
+- **Python 3.9+** with Pydantic models
+- **Flask** web app with Jinja2 templates
+- **Claude API** (Anthropic) for AI generation
+- **Google Calendar API** (OAuth 2.0)
+- **Microsoft Graph API** (optional, for Outlook)
+- **iCal / .ics** subscriptions for Outlook, iCloud, UniTime
+- **Localist API** for university events
+- **APScheduler** for daily scheduling
 
 ---
 
@@ -263,32 +234,59 @@ Manual Meetings ──────┘                                    │
 
 ```
 src/
-  config.py           # Two-layer config (YAML + .env)
-  models.py           # Pydantic data models (CalendarEvent -> PrepBrief -> Digest)
-  calendar_client.py  # Google Calendar OAuth + event fetching
-  outlook_client.py   # Outlook + Teams via Microsoft Graph API
-  ical_client.py      # iCal / UniTime .ics feed subscriptions
-  university_events.py # University event discovery (Purdue Localist API)
-  meeting_store.py    # Manual meeting JSON storage + CLI
-  event_processor.py  # Filter, dedup, classify, priority score (pure Python)
-  ai_briefer.py       # Claude API with category-specific prompts + ref docs + notes
-  reference_docs.py   # PDF/text/inline doc tagging per meeting category
-  meeting_notes.py    # Meeting notes storage, search, action items
-  email_sender.py     # Gmail SMTP + Jinja2 HTML rendering
-  scheduler.py        # APScheduler daily cron trigger
-  main.py             # CLI entry point + pipeline orchestration
   app.py              # Flask web app (browser UI)
+  main.py             # CLI entry point + pipeline
+  config.py           # Two-layer config (YAML + .env)
+  models.py           # Pydantic data models (13 meeting categories)
+  calendar_client.py  # Google Calendar OAuth
+  outlook_client.py   # Outlook + Teams via Microsoft Graph
+  ical_client.py      # iCal .ics subscriptions
+  university_events.py # University events (Purdue Localist API)
+  meeting_store.py    # Manual meeting storage (category, person lookup)
+  event_processor.py  # Filter, dedup, classify, score
+  ai_briefer.py       # Claude API with category-specific prompts
+  meeting_notes.py    # Notes + reflection + follow-ups + action items
+  reference_docs.py   # PDF/text/inline doc tagging
+  email_sender.py     # Gmail SMTP + HTML email
+  scheduler.py        # APScheduler daily cron
   templates/
-    email_template.html  # Responsive HTML email template
-    app/                 # Web app templates (13 pages)
+    email_template.html  # HTML email template
+    app/                 # 13 web app templates (colorful student theme)
 tests/
-  test_models.py           # 10 tests - data model validation
-  test_event_processor.py  # 17 tests - filtering, dedup, classification, scoring
-  test_meeting_store.py    # 12 tests - CRUD, persistence, conversion
-  test_ai_briefer.py       # 9 tests  - JSON parsing, fallbacks, mocked API
-  test_outlook_client.py   # 13 tests - Graph API parsing, Teams detection
-  test_university_events.py # 18 tests - Localist API, event parsing, selection
-  test_config.py           # 8 tests  - config loading, defaults, merging
+  97 tests covering models, processing, storage, AI, and integrations
+```
+
+---
+
+## CLI Commands
+
+```bash
+# Web app (recommended)
+python3 -m src.app
+
+# Pipeline
+python3 -m src.main --dry-run     # Preview digest (no email)
+python3 -m src.main --run         # Run pipeline + send email
+python3 -m src.main --schedule    # Start daily scheduler (8 AM)
+
+# Meetings
+python3 -m src.main --add-meeting
+python3 -m src.main --list-meetings
+python3 -m src.main --remove-meeting <ID>
+
+# University events
+python3 -m src.main --events
+
+# Reference docs
+python3 -m src.main --tag-doc resume.pdf interview
+python3 -m src.main --add-inline-doc
+python3 -m src.main --list-docs
+
+# Meeting notes
+python3 -m src.main --add-note
+python3 -m src.main --list-notes
+python3 -m src.main --search-notes "budget"
+python3 -m src.main --action-items
 ```
 
 ---
@@ -297,11 +295,11 @@ tests/
 
 ```
 Claude API:            $0 first 3-5 months ($5 free credit, ~$0.01/brief)
-Google Calendar API:   $0 (free tier - 1M requests/day)
-Microsoft Graph API:   $0 (free tier - 10K requests/10 min)
-Localist API:          $0 (public API, no auth needed)
+Google Calendar API:   $0 (free tier)
+Microsoft Graph API:   $0 (free tier)
+Localist API:          $0 (public API)
 Gmail SMTP:            $0
-------------------------------------------------------------
+────────────────────────────────────────────────
 Total:                 $0 to start, ~$2-3/month after free credit
 ```
 
@@ -323,4 +321,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Built with Python + Claude AI. Saves 5+ hours/week of meeting prep.
+Built with Python + Claude AI for students who refuse to walk into meetings unprepared.

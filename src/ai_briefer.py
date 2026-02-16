@@ -110,6 +110,28 @@ CATEGORY_PROMPTS = {
         "All-hands. List topics to listen for based on the agenda. "
         "Prepare 1-2 questions for Q&A if applicable. Minimal prep."
     ),
+    MeetingCategory.OFFICE_HOURS: (
+        "Office hours with professor/TA. Focus on: specific questions about "
+        "coursework or assignments you're stuck on, concepts to clarify, "
+        "and any upcoming deadlines to discuss. Come with concrete code/work samples."
+    ),
+    MeetingCategory.CLASS: (
+        "Class/lecture. Review last lecture's key concepts, skim assigned readings, "
+        "note any questions from homework. Minimal prep -- just be present and engaged."
+    ),
+    MeetingCategory.PART_TIME: (
+        "Part-time/work shift. Check any updates from supervisor, pending tasks, "
+        "and schedule changes. Keep prep light."
+    ),
+    MeetingCategory.CLUB: (
+        "Student club/org meeting. Review agenda if shared, note your "
+        "committee updates, upcoming events, and any votes or decisions needed."
+    ),
+    MeetingCategory.CAREER_FAIR: (
+        "Career fair/recruiting event. Research attending companies and target roles. "
+        "Prepare a 30-second elevator pitch tailored to this industry. "
+        "Have 2-3 company-specific questions ready. Bring copies of your resume."
+    ),
 }
 
 
