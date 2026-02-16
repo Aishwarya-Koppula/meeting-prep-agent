@@ -1,8 +1,35 @@
 {% extends "base.html" %}
-{% block title %}Pipeline result — Meeting Prep Agent{% endblock %}
+{% block title %}AI Prep Briefs — Meeting Prep Agent{% endblock %}
+{% block head %}
+<style>
+  .brief-card { border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 1.25rem; background: var(--card); box-shadow: var(--shadow); }
+  .brief-card:hover { box-shadow: var(--shadow-lg); }
+  .brief-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+  .brief-title { font-size: 1.1rem; font-weight: 700; }
+  .brief-meta { color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
+  .brief-section { margin-top: 0.85rem; }
+  .brief-section h3 { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
+  .brief-summary { font-size: 0.9rem; line-height: 1.65; color: var(--text); background: var(--bg); padding: 0.75rem; border-radius: 10px; }
+  .tp-list { list-style: none; }
+  .tp-list li { padding: 0.35rem 0; font-size: 0.88rem; display: flex; align-items: flex-start; gap: 0.5rem; }
+  .tp-list li .tp-icon { font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 12px; font-weight: 600; text-transform: uppercase; flex-shrink: 0; margin-top: 0.15rem; }
+  .tp-icon.discussion { background: #dbeafe; color: #1e40af; }
+  .tp-icon.question { background: #fce7f3; color: #9d174d; }
+  .tp-icon.update { background: #d1fae5; color: #065f46; }
+  .tp-icon.follow-up { background: #fef3c7; color: #92400e; }
+  .question-list { list-style: none; }
+  .question-list li { padding: 0.3rem 0; font-size: 0.88rem; color: var(--text); }
+  .question-list li::before { content: "❓ "; }
+  .context-box { background: var(--accent-light); padding: 0.75rem; border-radius: 10px; font-size: 0.85rem; color: var(--accent-dark); line-height: 1.6; }
+  .stats-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .stat-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.85rem; background: var(--card); border: 1px solid var(--border); border-radius: 20px; font-size: 0.82rem; font-weight: 600; }
+  .log-toggle { cursor: pointer; font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+  .log-toggle:hover { color: var(--accent); }
+</style>
+{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>Pipeline result</h1>
+  <h1>🤖 AI Prep Briefs</h1>
   <p class="subtitle"><a href="{{ url_for('index') }}">← Back to home</a></p>
 </div>
 
@@ -13,7 +40,7 @@
 {% else %}
   {% if dry_run %}
   <div class="card" style="border-left:4px solid var(--success);">
-    <p class="success" style="font-weight:600;">✅ Preview completed (no email sent).</p>
+    <p class="success" style="font-weight:600;">✅ Preview completed (no email sent)</p>
   </div>
   {% elif email_sent %}
   <div class="card" style="border-left:4px solid var(--success);">
@@ -21,22 +48,98 @@
   </div>
   {% else %}
   <div class="card">
-    <p class="muted">Pipeline completed (no email configured).</p>
+    <p class="muted">Pipeline completed (no email configured — using preview mode).</p>
   </div>
   {% endif %}
 
-  <div class="card">
-    <h2>📊 Pipeline Log</h2>
-    <pre class="log">{% for line in logs %}{{ line }}
-{% endfor %}</pre>
+  {% if digest and digest.briefs %}
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-pill">📅 {{ digest.total_meetings }} meetings</div>
+    <div class="stat-pill">⏱ {{ "%.1f"|format(digest.total_meeting_hours) }}h total</div>
+    {% if digest.high_priority_count %}<div class="stat-pill" style="border-color:var(--danger);color:var(--danger);">🔴 {{ digest.high_priority_count }} high priority</div>{% endif %}
   </div>
 
-  {% if preview_lines %}
-  <div class="card card-accent">
-    <h2>📝 Digest Preview</h2>
-    <pre class="log">{% for line in preview_lines %}{{ line }}
-{% endfor %}</pre>
+  <!-- Each brief as a card -->
+  {% for brief in digest.briefs %}
+  <div class="brief-card" style="border-left: 4px solid {% if brief.event.priority == 'high' %}var(--danger){% elif brief.event.priority == 'medium' %}var(--warn){% else %}var(--success){% endif %};">
+    <div class="brief-header">
+      <div>
+        <div class="brief-title">{{ brief.event.event.title }}</div>
+        <div class="brief-meta">
+          🕐 {{ brief.event.event.start_time[:16]|replace("T", " ") }}
+          · {{ brief.event.duration_minutes }}min
+          · <span class="badge cat-{{ brief.event.category }}">{{ brief.event.category }}</span>
+        </div>
+        {% if brief.event.event.attendees %}
+        <div class="brief-meta">👥 {{ brief.event.event.attendees[:5]|join(", ") }}{% if brief.event.event.attendees|length > 5 %} +{{ brief.event.event.attendees|length - 5 }} more{% endif %}</div>
+        {% endif %}
+      </div>
+      <span class="badge {% if brief.event.priority == 'high' %}badge-danger{% elif brief.event.priority == 'medium' %}badge-warn{% else %}badge-success{% endif %}">
+        {{ brief.event.priority|upper }}
+      </span>
+    </div>
+
+    {% if brief.summary %}
+    <div class="brief-section">
+      <h3>📋 AI Summary</h3>
+      <div class="brief-summary">{{ brief.summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if brief.talking_points %}
+    <div class="brief-section">
+      <h3>💬 Talking Points</h3>
+      <ul class="tp-list">
+        {% for tp in brief.talking_points %}
+        <li>
+          <span class="tp-icon {{ tp.category }}">{{ tp.category }}</span>
+          {{ tp.point }}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if brief.suggested_questions %}
+    <div class="brief-section">
+      <h3>Questions to Ask</h3>
+      <ul class="question-list">
+        {% for q in brief.suggested_questions %}
+        <li>{{ q }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if brief.context_notes %}
+    <div class="brief-section">
+      <h3>📝 Prep Notes</h3>
+      <div class="context-box">{{ brief.context_notes }}</div>
+    </div>
+    {% endif %}
+
+    {% if brief.preparation_time_minutes %}
+    <div style="margin-top:0.6rem;font-size:0.78rem;color:var(--muted);">⏰ Estimated prep: {{ brief.preparation_time_minutes }} min</div>
+    {% endif %}
   </div>
+  {% endfor %}
+
+  {% elif digest %}
+  <div class="card empty">
+    <div class="emoji">☀️</div>
+    <p>No meetings need preparation today!</p>
+    <p class="muted">Enjoy your free time. Add meetings or check back tomorrow.</p>
+  </div>
+  {% endif %}
+
+  <!-- Pipeline log (collapsed by default) -->
+  {% if logs %}
+  <details style="margin-top:1rem;">
+    <summary class="log-toggle">📊 View pipeline log ({{ logs|length }} lines)</summary>
+    <pre class="log" style="margin-top:0.5rem;">{% for line in logs %}{{ line }}
+{% endfor %}</pre>
+  </details>
   {% endif %}
 {% endif %}
 {% endblock %}

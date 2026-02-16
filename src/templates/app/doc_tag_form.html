@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
   <h1>Tag a file</h1>
-  <p class="subtitle">Tag a PDF, text file, or document so AI can use it during prep.</p>
+  <p class="subtitle">Tag a PDF, text file, or document on your computer so AI can use it during prep.</p>
 </div>
 
 {% if error %}<p class="error" style="margin-bottom:1rem;">{{ error }}</p>{% endif %}
@@ -16,11 +16,14 @@
     <label>Category *</label>
     <select name="category">
       <option value="">Select...</option>
-      <option value="interview">Interview (resume, STAR examples, projects)</option>
-      <option value="networking">Networking (elevator pitch, interests)</option>
-      <option value="class">Class (syllabi, course notes)</option>
-      <option value="work">Work (project docs, standup notes)</option>
-      <option value="other">Other</option>
+      <option value="interview">🎯 Interview (resume, STAR examples, projects)</option>
+      <option value="networking">🤝 Networking (elevator pitch, interests)</option>
+      <option value="class">📚 Class (syllabi, course notes)</option>
+      <option value="office-hours">🏫 Office Hours (assignment questions)</option>
+      <option value="career-fair">🎓 Career Fair (target companies)</option>
+      <option value="club">🎪 Club / Org (meeting agenda)</option>
+      <option value="work">💼 Work (project docs, standup notes)</option>
+      <option value="other">📋 Other</option>
     </select>
 
     <label>Short label (optional)</label>
@@ -31,5 +34,10 @@
       <a href="{{ url_for('docs_list') }}" class="btn btn-secondary">Cancel</a>
     </div>
   </form>
+</div>
+
+<div class="card" style="margin-top:1rem;">
+  <h2>💡 Tip</h2>
+  <p class="muted">Want to add a Google Doc instead? Use <a href="{{ url_for('docs_inline') }}">Add content</a> — you can paste a Google Docs link directly.</p>
 </div>
 {% endblock %}

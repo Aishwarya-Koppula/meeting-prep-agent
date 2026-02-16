@@ -9,7 +9,7 @@ Uses the same pipeline and stores as the CLI; no logic duplication.
 
 import json
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as _date
 from pathlib import Path
 
 from flask import Flask, redirect, render_template, request, url_for, jsonify
@@ -87,19 +87,16 @@ def run():
     result = run_pipeline(config, dry_run=dry_run, log_collector=logs)
     if result is None:
         digest_dict = None
-        preview_lines = []
         email_sent = False
     else:
-        digest, email_sent = result
-        digest_dict = digest.model_dump(mode="json") if digest else None
-        preview_lines = _digest_preview_lines(digest) if digest else []
+        digest_obj, email_sent = result
+        digest_dict = digest_obj.model_dump(mode="json") if digest_obj else None
         if digest_dict and "date" in digest_dict:
             digest_dict["date"] = str(digest_dict["date"])
     return render_template(
         "result.html",
         logs=logs,
         digest=digest_dict,
-        preview_lines=preview_lines,
         email_sent=email_sent,
         dry_run=dry_run,
     )
@@ -339,12 +336,47 @@ def docs_inline():
         return render_template("doc_inline_form.html")
     category = request.form.get("category", "").strip().lower()
     content = request.form.get("content", "").strip()
+    gdoc_url = request.form.get("gdoc_url", "").strip()
     label = request.form.get("label", "").strip() or None
+
+    # If Google Docs URL provided, fetch its content
+    if gdoc_url and not content:
+        fetched = _fetch_gdoc_text(gdoc_url)
+        if fetched is None:
+            return render_template("doc_inline_form.html", error="Could not fetch Google Doc. Make sure it's shared as 'Anyone with the link can view'."), 400
+        content = fetched
+        if not label:
+            label = "Google Doc"
+
     if not category or not content:
-        return render_template("doc_inline_form.html", error="Category and content required."), 400
+        return render_template("doc_inline_form.html", error="Category and content (or a Google Docs URL) required."), 400
     store = ReferenceDocsStore()
     store.add_inline_doc(category, content, label=label)
     return redirect(url_for("docs_list"))
+
+
+def _fetch_gdoc_text(url: str):
+    """Fetch plain text content from a public/shared Google Doc URL."""
+    import re
+    import requests as req
+
+    # Extract doc ID from various Google Docs URL formats
+    match = re.search(r'/document/d/([a-zA-Z0-9_-]+)', url)
+    if not match:
+        match = re.search(r'id=([a-zA-Z0-9_-]+)', url)
+    if not match:
+        return None
+
+    doc_id = match.group(1)
+    export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
+
+    try:
+        resp = req.get(export_url, timeout=15, allow_redirects=True)
+        if resp.status_code == 200 and len(resp.text) > 10:
+            return resp.text[:50000]  # Cap at 50k chars
+        return None
+    except Exception:
+        return None
 
 
 @app.route("/docs/remove", methods=["POST"])
@@ -532,18 +564,48 @@ Give 2-3 specific, encouraging tips for improvement. Be concise and student-frie
 
 @app.route("/week")
 def week_view():
-    """Show a weekly calendar view (7 days) with events from enabled sources."""
+    """Show a navigable weekly calendar view with prev/next, date picker, day detail."""
     config = _config()
     if not config:
-        return render_template("week.html", days=[], errors=["Could not load config"])
+        return render_template("week.html", days=[], days_json="[]", errors=["Could not load config"],
+                               prev_week="", next_week="", week_label="", current_start="",
+                               is_current_week=True)
 
     errors = []
     all_events = []
-
     now = datetime.now()
-    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end = start + timedelta(days=7)
+    today = now.date()
 
+    # Determine the start date from query param (default: Monday of current week)
+    start_param = request.args.get("start", "")
+    if start_param:
+        try:
+            start_date = _date.fromisoformat(start_param)
+        except ValueError:
+            start_date = today
+    else:
+        start_date = today
+
+    # Snap to Monday of the requested week
+    week_start = start_date - timedelta(days=start_date.weekday())
+    week_end = week_start + timedelta(days=7)
+
+    start = datetime.combine(week_start, datetime.min.time())
+    end = datetime.combine(week_end, datetime.min.time())
+
+    # Calculate navigation dates
+    prev_week = (week_start - timedelta(days=7)).isoformat()
+    next_week = (week_start + timedelta(days=7)).isoformat()
+    is_current_week = (week_start == today - timedelta(days=today.weekday()))
+
+    # Week label like "Feb 10 – 16, 2026"
+    we = week_start + timedelta(days=6)
+    if week_start.month == we.month:
+        week_label = f"{week_start.strftime('%b %d')} – {we.strftime('%d, %Y')}"
+    else:
+        week_label = f"{week_start.strftime('%b %d')} – {we.strftime('%b %d, %Y')}"
+
+    # Fetch events from all sources
     # Google
     if config.google.enabled:
         try:
@@ -553,7 +615,7 @@ def week_view():
         except Exception as e:
             errors.append(f"Google: {e}")
 
-    # Outlook / Teams — only if token exists (no interactive auth in web view)
+    # Outlook / Teams
     if config.outlook.enabled and _check_outlook_token():
         try:
             o = OutlookCalendarClient(config.outlook)
@@ -564,10 +626,11 @@ def week_view():
     elif config.outlook.enabled:
         errors.append("Outlook: Not connected yet. Go to Calendars to connect.")
 
-    # iCal subscriptions
+    # iCal subscriptions (fetch wider window, filter below)
     if config.ical.enabled:
         try:
-            ical_events = fetch_all_ical_events(lookahead_hours=168, sources_path=config.ical.sources_path)
+            hours_from_now = max(168, int((end - now).total_seconds() / 3600) + 24)
+            ical_events = fetch_all_ical_events(lookahead_hours=hours_from_now, sources_path=config.ical.sources_path)
             all_events.extend(ical_events)
         except Exception as e:
             errors.append(f"iCal: {e}")
@@ -580,7 +643,7 @@ def week_view():
     except Exception as e:
         errors.append(f"Manual store: {e}")
 
-    # Normalize and group by day
+    # Normalize events
     def to_simple(ev):
         try:
             start_dt = ev.start_time
@@ -591,24 +654,39 @@ def week_view():
                 "end": end_dt.strftime("%Y-%m-%dT%H:%M"),
                 "date": start_dt.date().isoformat(),
                 "source": getattr(ev, "source", "unknown"),
-                "calendar_id": getattr(ev, "calendar_id", ""),
                 "location": ev.location or "",
             }
         except Exception:
-            return {"title": getattr(ev, "title", "(No title)"), "date": now.date().isoformat(), "start": "", "end": "", "source": "", "calendar_id": "", "location": ""}
+            return {"title": getattr(ev, "title", "(No title)"), "date": today.isoformat(), "start": "", "end": "", "source": "", "location": ""}
 
     simples = [to_simple(e) for e in all_events]
 
     dow_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    dow_full = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     days = []
     for i in range(7):
-        d = start + timedelta(days=i)
-        day_str = d.date().isoformat()
+        d = week_start + timedelta(days=i)
+        day_str = d.isoformat()
         items = [s for s in simples if s.get("date") == day_str]
         items.sort(key=lambda x: x.get("start") or "")
-        days.append({"date": day_str, "dow": dow_names[d.weekday()], "events": items})
+        days.append({
+            "date": day_str,
+            "dow": dow_names[d.weekday()],
+            "dow_full": dow_full[d.weekday()],
+            "day_num": d.day,
+            "is_today": d == today,
+            "events": items,
+        })
 
-    return render_template("week.html", days=days, errors=errors)
+    return render_template("week.html",
+                           days=days,
+                           days_json=json.dumps(days),
+                           errors=errors,
+                           prev_week=prev_week,
+                           next_week=next_week,
+                           week_label=week_label,
+                           current_start=week_start.isoformat(),
+                           is_current_week=is_current_week)
 
 
 def main():

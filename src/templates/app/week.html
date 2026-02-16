@@ -1,15 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Weekly View — Meeting Prep Agent{% endblock %}
+{% block title %}Calendar — Meeting Prep Agent{% endblock %}
 {% block head %}
 <style>
-  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; margin-top: 1rem; }
+  .cal-nav { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .cal-nav .nav-btn { background: var(--input-bg); color: var(--text); border: 1.5px solid var(--border); box-shadow: none; padding: 0.4rem 0.75rem; font-size: 0.82rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: inherit; text-decoration: none; display: inline-flex; align-items: center; }
+  .cal-nav .nav-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); transform: none; text-decoration: none; }
+
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; margin-top: 0.75rem; }
   @media (max-width: 900px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 500px) { .week-grid { grid-template-columns: 1fr; } }
-  .day-col { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; min-height: 180px; box-shadow: var(--shadow); }
+
+  .day-col { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; min-height: 180px; box-shadow: var(--shadow); cursor: pointer; transition: border-color 0.15s; }
+  .day-col:hover { border-color: var(--accent); }
   .day-col.today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
-  .day-header { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); color: var(--muted); }
+  .day-header { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
   .day-header.today-hdr { color: var(--accent); }
-  .evt { border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.4rem 0.6rem; margin-bottom: 0.4rem; font-size: 0.8rem; background: var(--bg); }
+  .day-header .day-num { font-size: 1.1rem; color: var(--text); }
+  .day-header.today-hdr .day-num { background: var(--accent); color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
+
+  .evt { border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.4rem 0.6rem; margin-bottom: 0.4rem; font-size: 0.8rem; background: var(--bg); transition: background 0.15s; }
+  .evt:hover { background: var(--accent-light); }
   .evt .evt-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
   .evt .evt-time { color: var(--muted); font-size: 0.72rem; }
   .evt .evt-meta { color: var(--muted); font-size: 0.7rem; }
@@ -17,6 +27,7 @@
   .evt[data-source="outlook"], .evt[data-source="ical"] { border-left-color: var(--outlook); }
   .evt[data-source="unitime"] { border-left-color: var(--unitime); }
   .evt[data-source="manual"] { border-left-color: var(--manual); }
+
   .no-events { color: var(--muted); font-size: 0.8rem; font-style: italic; padding: 0.5rem 0; }
   .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; font-size: 0.78rem; color: var(--muted); }
   .legend span { display: flex; align-items: center; gap: 0.3rem; }
@@ -26,16 +37,35 @@
   .legend .l-unitime::before { background: var(--unitime); }
   .legend .l-icloud::before { background: var(--icloud); }
   .legend .l-manual::before { background: var(--manual); }
+
+  /* Day detail panel */
+  .day-detail { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-top: 1rem; box-shadow: var(--shadow); display: none; }
+  .day-detail.open { display: block; }
+  .day-detail .dd-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+  .day-detail .dd-title { font-weight: 700; font-size: 1.1rem; }
+  .day-detail .dd-close { cursor: pointer; background: none; border: none; font-size: 1.2rem; color: var(--muted); padding: 0.25rem; }
+  .dd-event { border-left: 4px solid var(--accent); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.6rem; background: var(--bg); }
+  .dd-event[data-source="google"] { border-left-color: var(--google); }
+  .dd-event[data-source="outlook"], .dd-event[data-source="ical"] { border-left-color: var(--outlook); }
+  .dd-event[data-source="unitime"] { border-left-color: var(--unitime); }
+  .dd-event[data-source="manual"] { border-left-color: var(--manual); }
+  .dd-event .de-title { font-weight: 700; font-size: 0.95rem; }
+  .dd-event .de-time { color: var(--muted); font-size: 0.82rem; margin-top: 0.15rem; }
+  .dd-event .de-loc { color: var(--muted); font-size: 0.8rem; margin-top: 0.15rem; }
+
+  .view-tabs { display: inline-flex; gap: 0.2rem; background: var(--input-bg); border-radius: 10px; padding: 0.2rem; }
+  .view-tab { padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--muted); font-family: inherit; }
+  .view-tab.active { background: var(--accent); color: #fff; }
 </style>
 {% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>📅 Weekly View</h1>
-  <p class="subtitle">All your events from every calendar, in one place.</p>
+  <h1>📅 Calendar</h1>
+  <p class="subtitle">All your events from every calendar. Click any day for details.</p>
 </div>
 
 {% if errors %}
-  <div class="card" style="border-left:4px solid var(--warn);">
+  <div class="card" style="border-left:4px solid var(--warn);margin-bottom:1rem;">
     <h2>⚠️ Warnings</h2>
     <ul style="list-style:none;">
     {% for e in errors %}
@@ -45,11 +75,27 @@
   </div>
 {% endif %}
 
+<!-- Navigation bar -->
+<div class="cal-nav">
+  <a href="{{ url_for('week_view', start=prev_week) }}" class="nav-btn">‹ Prev</a>
+  <a href="{{ url_for('week_view') }}" class="nav-btn" style="{% if is_current_week %}background:var(--accent);color:#fff;border-color:var(--accent);{% endif %}">Today</a>
+  <a href="{{ url_for('week_view', start=next_week) }}" class="nav-btn">Next ›</a>
+
+  <span style="font-weight:700;font-size:1rem;color:var(--text);min-width:180px;">{{ week_label }}</span>
+
+  <form method="get" action="{{ url_for('week_view') }}" style="display:flex;gap:0.35rem;margin:0;margin-left:auto;">
+    <input type="date" name="start" value="{{ current_start }}" style="padding:0.35rem 0.6rem;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.82rem;background:var(--input-bg);">
+    <button type="submit" class="nav-btn">Go</button>
+  </form>
+</div>
+
+<!-- Week grid -->
 <div class="week-grid">
   {% for day in days %}
-    <div class="day-col{% if loop.index0 == 0 %} today{% endif %}">
-      <div class="day-header{% if loop.index0 == 0 %} today-hdr{% endif %}">
-        {{ day.dow }} {{ day.date[5:] }}
+    <div class="day-col{% if day.is_today %} today{% endif %}" onclick="openDay({{ loop.index0 }})">
+      <div class="day-header{% if day.is_today %} today-hdr{% endif %}">
+        <span>{{ day.dow }}</span>
+        <span class="day-num">{{ day.day_num }}</span>
       </div>
       {% if day.events %}
         {% for it in day.events %}
@@ -59,7 +105,7 @@
               <div class="evt-time">{{ it.start[11:16] }} – {{ it.end[11:16] }}</div>
             {% endif %}
             {% if it.location %}
-              <div class="evt-meta">{{ it.location }}</div>
+              <div class="evt-meta">📍 {{ it.location }}</div>
             {% endif %}
           </div>
         {% endfor %}
@@ -70,11 +116,59 @@
   {% endfor %}
 </div>
 
+<!-- Day detail panel (appears below when you click a day) -->
+<div class="day-detail" id="day-detail">
+  <div class="dd-header">
+    <span class="dd-title" id="dd-title"></span>
+    <button class="dd-close" onclick="closeDay()">✕</button>
+  </div>
+  <div id="dd-events"></div>
+</div>
+
 <div class="legend">
   <span class="l-google">Google</span>
-  <span class="l-outlook">Outlook</span>
+  <span class="l-outlook">Outlook / iCal</span>
   <span class="l-unitime">UniTime</span>
   <span class="l-icloud">iCloud</span>
   <span class="l-manual">Manual</span>
 </div>
+
+<script>
+const allDays = {{ days_json | safe }};
+
+function openDay(idx) {
+  const day = allDays[idx];
+  const panel = document.getElementById('day-detail');
+  document.getElementById('dd-title').textContent = day.dow_full + ', ' + day.date;
+
+  const container = document.getElementById('dd-events');
+  if (!day.events.length) {
+    container.innerHTML = '<p class="muted" style="padding:1rem 0;">No events this day ☀️</p>';
+  } else {
+    let html = '';
+    day.events.forEach(e => {
+      const time = (e.start && e.end) ? e.start.substring(11,16) + ' – ' + e.end.substring(11,16) : '';
+      html += `<div class="dd-event" data-source="${e.source}">
+        <div class="de-title">${e.title}</div>
+        ${time ? `<div class="de-time">🕐 ${time}</div>` : ''}
+        ${e.location ? `<div class="de-loc">📍 ${e.location}</div>` : ''}
+        <span class="badge badge-off" style="margin-top:0.3rem;">${e.source}</span>
+      </div>`;
+    });
+    container.innerHTML = html;
+  }
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Highlight clicked day
+  document.querySelectorAll('.day-col').forEach((el, i) => {
+    el.style.outline = i === idx ? '2px solid var(--accent)' : '';
+  });
+}
+
+function closeDay() {
+  document.getElementById('day-detail').classList.remove('open');
+  document.querySelectorAll('.day-col').forEach(el => el.style.outline = '');
+}
+</script>
 {% endblock %}

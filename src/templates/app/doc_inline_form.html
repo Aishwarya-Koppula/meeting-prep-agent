@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Paste content — Meeting Prep Agent{% endblock %}
+{% block title %}Add content — Meeting Prep Agent{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>Paste content</h1>
-  <p class="subtitle">Paste text from a Google Doc, notes app, or website. AI will use this during meeting prep.</p>
+  <h1>Add reference content</h1>
+  <p class="subtitle">Add content for AI to use during meeting prep. Paste text or link a Google Doc.</p>
 </div>
 
 {% if error %}<p class="error" style="margin-bottom:1rem;">{{ error }}</p>{% endif %}
@@ -13,18 +13,30 @@
     <label>Category *</label>
     <select name="category">
       <option value="">Select...</option>
-      <option value="interview">Interview</option>
-      <option value="networking">Networking</option>
-      <option value="class">Class</option>
-      <option value="work">Work</option>
-      <option value="other">Other</option>
+      <option value="interview">🎯 Interview (resume, STAR examples)</option>
+      <option value="networking">🤝 Networking (elevator pitch, interests)</option>
+      <option value="class">📚 Class (syllabi, course notes)</option>
+      <option value="office-hours">🏫 Office Hours (assignment questions)</option>
+      <option value="career-fair">🎓 Career Fair (target companies)</option>
+      <option value="club">🎪 Club / Org (meeting agenda)</option>
+      <option value="work">💼 Work (project docs, standup notes)</option>
+      <option value="other">📋 Other</option>
     </select>
 
     <label>Short label (optional)</label>
-    <input type="text" name="label" placeholder="e.g. Interview STAR examples, Project summary">
+    <input type="text" name="label" placeholder="e.g. Interview STAR examples, Resume, Project summary">
 
-    <label>Content *</label>
-    <textarea name="content" rows="14" placeholder="Paste your notes, resume text, project description, or any content you want AI to reference..."></textarea>
+    <hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border);">
+
+    <h3 style="font-size:0.95rem;color:var(--accent);margin-bottom:0.5rem;">Option 1: Google Docs link</h3>
+    <p class="muted" style="margin-bottom:0.5rem;font-size:0.8rem;">Paste a shared Google Docs URL. Doc must be shared as "Anyone with the link can view".</p>
+    <label>Google Docs URL</label>
+    <input type="url" name="gdoc_url" placeholder="https://docs.google.com/document/d/abc123/edit">
+
+    <h3 style="font-size:0.95rem;color:var(--accent);margin-top:1.25rem;margin-bottom:0.5rem;">Option 2: Paste content</h3>
+    <p class="muted" style="margin-bottom:0.5rem;font-size:0.8rem;">Or paste text directly (from notes, docs, websites).</p>
+    <label>Content</label>
+    <textarea name="content" rows="12" placeholder="Paste your notes, resume text, project description, or any content you want AI to reference..."></textarea>
 
     <div style="margin-top:1.25rem;display:flex;gap:0.5rem;">
       <button type="submit">Save content</button>
