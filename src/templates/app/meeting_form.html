@@ -1,31 +1,65 @@
 {% extends "base.html" %}
 {% block title %}Add meeting — Meeting Prep Agent{% endblock %}
 {% block content %}
+<div class="page-header">
   <h1>Add meeting</h1>
-  {% if error %}<p class="error">{{ error }}</p>{% endif %}
-  <div class="card">
-    <form method="post" action="{{ url_for('meetings_add') }}">
-      <label>Title *</label>
-      <input type="text" name="title" required placeholder="e.g. 1:1 with Alex">
-      <label>Date</label>
-      <input type="date" name="date" value="{{ now or '' }}">
-      <label>Start time</label>
-      <input type="time" name="time" value="09:00">
-      <label>Duration (minutes)</label>
-      <input type="number" name="duration" value="30" min="5" max="480">
-      <label>Attendees (comma-separated)</label>
-      <input type="text" name="attendees" placeholder="alex@co.com, Bob">
-      <label>Description / agenda</label>
-      <textarea name="description" placeholder="Optional"></textarea>
-      <label>Location</label>
-      <input type="text" name="location" placeholder="Optional">
-      <label>Meeting link (Zoom / Meet / Teams)</label>
-      <input type="text" name="meeting_link" placeholder="https://...">
-      <label><input type="checkbox" name="is_recurring"> Recurring</label>
-      <div style="margin-top: 1rem;">
-        <button type="submit">Save</button>
-        <a href="{{ url_for('meetings_list') }}" class="btn btn-secondary">Cancel</a>
+  <p class="subtitle">Add a meeting that's not in your calendars — coffee chat, study group, phone call, etc.</p>
+</div>
+
+{% if error %}<p class="error" style="margin-bottom:1rem;">{{ error }}</p>{% endif %}
+
+<div class="card">
+  <form method="post" action="{{ url_for('meetings_add') }}">
+    <label>Title *</label>
+    <input type="text" name="title" required placeholder="e.g. Coffee chat with Alex">
+
+    <div class="grid-2" style="max-width:480px;">
+      <div>
+        <label>Date</label>
+        <input type="date" name="date" value="{{ now or '' }}" style="max-width:100%;">
       </div>
-    </form>
-  </div>
+      <div>
+        <label>Start time</label>
+        <input type="time" name="time" value="09:00" style="max-width:100%;">
+      </div>
+    </div>
+
+    <label>Duration (minutes)</label>
+    <input type="number" name="duration" value="30" min="5" max="480" style="max-width:120px;">
+
+    <label>Category</label>
+    <select name="category">
+      <option value="">Auto-detect</option>
+      <option value="interview">Interview</option>
+      <option value="networking">Networking</option>
+      <option value="class">Class</option>
+      <option value="office_hours">Office Hours</option>
+      <option value="work">Part-time / Work</option>
+      <option value="club">Club / Org</option>
+      <option value="career_fair">Career Fair / Event</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label>Attendees (comma-separated)</label>
+    <input type="text" name="attendees" placeholder="alex@company.com, Bob Smith">
+
+    <label>Description / agenda</label>
+    <textarea name="description" placeholder="What's this meeting about? (helps AI generate better prep)"></textarea>
+
+    <label>Location</label>
+    <input type="text" name="location" placeholder="Zoom, WALC 1055, Starbucks...">
+
+    <label>Meeting link</label>
+    <input type="text" name="meeting_link" placeholder="https://zoom.us/j/...">
+
+    <label style="display:flex;align-items:center;gap:0.5rem;flex-direction:row;text-transform:none;font-size:0.875rem;">
+      <input type="checkbox" name="is_recurring"> Recurring meeting
+    </label>
+
+    <div style="margin-top:1.25rem;display:flex;gap:0.5rem;">
+      <button type="submit">Save meeting</button>
+      <a href="{{ url_for('meetings_list') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

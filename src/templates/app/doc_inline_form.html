@@ -1,20 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Paste content — Meeting Prep Agent{% endblock %}
 {% block content %}
-  <h1>Paste content (e.g. from Google Doc)</h1>
-  {% if error %}<p class="error">{{ error }}</p>{% endif %}
-  <div class="card">
-    <form method="post" action="{{ url_for('docs_inline') }}">
-      <label>Category *</label>
-      <input type="text" name="category" placeholder="interview, networking, client, team, 1:1, other">
-      <label>Short label (optional)</label>
-      <input type="text" name="label" placeholder="e.g. Interview STAR tips">
-      <label>Content *</label>
-      <textarea name="content" rows="12" placeholder="Paste your notes or doc content here..."></textarea>
-      <div style="margin-top: 1rem;">
-        <button type="submit">Save</button>
-        <a href="{{ url_for('docs_list') }}" class="btn btn-secondary">Cancel</a>
-      </div>
-    </form>
-  </div>
+<div class="page-header">
+  <h1>Paste content</h1>
+  <p class="subtitle">Paste text from a Google Doc, notes app, or website. AI will use this during meeting prep.</p>
+</div>
+
+{% if error %}<p class="error" style="margin-bottom:1rem;">{{ error }}</p>{% endif %}
+
+<div class="card">
+  <form method="post" action="{{ url_for('docs_inline') }}">
+    <label>Category *</label>
+    <select name="category">
+      <option value="">Select...</option>
+      <option value="interview">Interview</option>
+      <option value="networking">Networking</option>
+      <option value="class">Class</option>
+      <option value="work">Work</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label>Short label (optional)</label>
+    <input type="text" name="label" placeholder="e.g. Interview STAR examples, Project summary">
+
+    <label>Content *</label>
+    <textarea name="content" rows="14" placeholder="Paste your notes, resume text, project description, or any content you want AI to reference..."></textarea>
+
+    <div style="margin-top:1.25rem;display:flex;gap:0.5rem;">
+      <button type="submit">Save content</button>
+      <a href="{{ url_for('docs_list') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

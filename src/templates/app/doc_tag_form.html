@@ -1,20 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Tag doc — Meeting Prep Agent{% endblock %}
 {% block content %}
+<div class="page-header">
   <h1>Tag a file</h1>
-  {% if error %}<p class="error">{{ error }}</p>{% endif %}
-  <div class="card">
-    <form method="post" action="{{ url_for('docs_tag') }}">
-      <label>File path (absolute or relative to project) *</label>
-      <input type="text" name="path" placeholder="/path/to/interview_tips.pdf or ./docs/notes.txt">
-      <label>Category *</label>
-      <input type="text" name="category" placeholder="interview, networking, client, team, 1:1, other">
-      <label>Short label (optional)</label>
-      <input type="text" name="label" placeholder="e.g. STAR examples">
-      <div style="margin-top: 1rem;">
-        <button type="submit">Tag</button>
-        <a href="{{ url_for('docs_list') }}" class="btn btn-secondary">Cancel</a>
-      </div>
-    </form>
-  </div>
+  <p class="subtitle">Tag a PDF, text file, or document so AI can use it during prep.</p>
+</div>
+
+{% if error %}<p class="error" style="margin-bottom:1rem;">{{ error }}</p>{% endif %}
+
+<div class="card">
+  <form method="post" action="{{ url_for('docs_tag') }}">
+    <label>File path *</label>
+    <input type="text" name="path" placeholder="/path/to/resume.pdf or ./docs/notes.txt">
+
+    <label>Category *</label>
+    <select name="category">
+      <option value="">Select...</option>
+      <option value="interview">Interview (resume, STAR examples, projects)</option>
+      <option value="networking">Networking (elevator pitch, interests)</option>
+      <option value="class">Class (syllabi, course notes)</option>
+      <option value="work">Work (project docs, standup notes)</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label>Short label (optional)</label>
+    <input type="text" name="label" placeholder="e.g. STAR examples, Resume v2">
+
+    <div style="margin-top:1.25rem;display:flex;gap:0.5rem;">
+      <button type="submit">Tag document</button>
+      <a href="{{ url_for('docs_list') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

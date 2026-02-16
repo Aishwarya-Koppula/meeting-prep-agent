@@ -478,7 +478,7 @@ def week_view():
         day_str = d.date().isoformat()
         items = [s for s in simples if s.get("date") == day_str]
         items.sort(key=lambda x: x.get("start") or "")
-        days.append({"date": day_str, "dow": dow_names[d.weekday()], "items": items})
+        days.append({"date": day_str, "dow": dow_names[d.weekday()], "events": items})
 
     return render_template("week.html", days=days, errors=errors)
 

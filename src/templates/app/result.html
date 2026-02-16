@@ -1,32 +1,42 @@
 {% extends "base.html" %}
 {% block title %}Pipeline result — Meeting Prep Agent{% endblock %}
 {% block content %}
+<div class="page-header">
   <h1>Pipeline result</h1>
-  <p><a href="{{ url_for('index') }}">← Back to home</a></p>
+  <p class="subtitle"><a href="{{ url_for('index') }}">← Back to home</a></p>
+</div>
 
-  {% if error %}
-  <div class="card">
-    <p class="error">{{ error }}</p>
+{% if error %}
+<div class="card" style="border-left:4px solid var(--danger);">
+  <p class="error">{{ error }}</p>
+</div>
+{% else %}
+  {% if dry_run %}
+  <div class="card" style="border-left:4px solid var(--success);">
+    <p class="success" style="font-weight:600;">✅ Preview completed (no email sent).</p>
+  </div>
+  {% elif email_sent %}
+  <div class="card" style="border-left:4px solid var(--success);">
+    <p class="success" style="font-weight:600;">✅ Digest email sent successfully!</p>
   </div>
   {% else %}
-  {% if dry_run %}
-  <div class="card success">Preview completed (no email sent).</div>
-  {% elif email_sent %}
-  <div class="card success">Digest email sent.</div>
-  {% else %}
-  <div class="card">Pipeline completed (no email or send failed).</div>
+  <div class="card">
+    <p class="muted">Pipeline completed (no email configured).</p>
+  </div>
   {% endif %}
 
   <div class="card">
-    <h2>Log</h2>
-    <pre class="log">{% for line in logs %}{{ line }}\n{% endfor %}</pre>
+    <h2>📊 Pipeline Log</h2>
+    <pre class="log">{% for line in logs %}{{ line }}
+{% endfor %}</pre>
   </div>
 
   {% if preview_lines %}
-  <div class="card">
-    <h2>Digest preview</h2>
-    <pre class="log">{% for line in preview_lines %}{{ line }}\n{% endfor %}</pre>
+  <div class="card card-accent">
+    <h2>📝 Digest Preview</h2>
+    <pre class="log">{% for line in preview_lines %}{{ line }}
+{% endfor %}</pre>
   </div>
   {% endif %}
-  {% endif %}
+{% endif %}
 {% endblock %}

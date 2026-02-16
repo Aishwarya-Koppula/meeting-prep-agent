@@ -1,32 +1,53 @@
 {% extends "base.html" %}
-{% block title %}Reference docs — Meeting Prep Agent{% endblock %}
+{% block title %}My Docs — Meeting Prep Agent{% endblock %}
 {% block content %}
-  <h1>Reference docs</h1>
-  <p class="muted">Tag PDFs or paste content by category (interview, networking, etc.). <a href="{{ url_for('docs_tag') }}">Tag file</a> · <a href="{{ url_for('docs_inline') }}">Paste content (e.g. Google Doc)</a></p>
+<div class="page-header">
+  <h1>📄 My Docs</h1>
+  <p class="subtitle">Upload your resume, project descriptions, and notes. AI uses these to generate tailored prep briefs.</p>
+</div>
 
-  {% if by_category %}
-  <div class="card">
-    {% for category, docs in by_category.items() %}
-    {% if docs %}
-    <h2>{{ category }}</h2>
-    <ul>
-      {% for d in docs %}
-      <li>
-        {{ d.filename }} {% if d.label %}({{ d.label }}){% endif %}
-        {% if d.path.startswith('inline:') %}<span class="muted">inline</span>{% endif %}
-        <form method="post" action="{{ url_for('docs_remove') }}" style="display: inline; margin-left: 0.5rem;">
-          <input type="hidden" name="path_or_id" value="{{ d.path }}">
-          <button type="submit" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Remove</button>
-        </form>
-      </li>
-      {% endfor %}
-    </ul>
+<div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+  <a href="{{ url_for('docs_tag') }}" class="btn">Tag a file</a>
+  <a href="{{ url_for('docs_inline') }}" class="btn btn-outline">Paste content</a>
+</div>
+
+{% if by_category %}
+{% for category, docs in by_category.items() %}
+{% if docs %}
+<div class="card">
+  <h2>
+    {% if category == 'interview' %}<span class="badge cat-interview">Interview</span>
+    {% elif category == 'networking' %}<span class="badge cat-networking">Networking</span>
+    {% elif category == 'class' %}<span class="badge cat-class">Class</span>
+    {% elif category == 'work' %}<span class="badge cat-work">Work</span>
+    {% else %}<span class="badge cat-other">{{ category }}</span>
     {% endif %}
+  </h2>
+  <ul class="item-list">
+    {% for d in docs %}
+    <li>
+      <div class="item-info">
+        <div class="item-title">{{ d.filename }}</div>
+        <div class="item-meta">
+          {% if d.label %}{{ d.label }}{% endif %}
+          {% if d.path.startswith('inline:') %} · inline content{% endif %}
+        </div>
+      </div>
+      <form method="post" action="{{ url_for('docs_remove') }}" style="margin:0;">
+        <input type="hidden" name="path_or_id" value="{{ d.path }}">
+        <button type="submit" class="btn-secondary btn-sm">Remove</button>
+      </form>
+    </li>
     {% endfor %}
-  </div>
-  {% else %}
-  <div class="card">
-    <p class="muted">No docs tagged. Tag a file or paste content to use in prep briefs.</p>
-  </div>
-  {% endif %}
+  </ul>
+</div>
+{% endif %}
+{% endfor %}
+{% else %}
+<div class="card empty">
+  <div class="emoji">📁</div>
+  <p>No docs uploaded yet.</p>
+  <p class="muted">Tag your resume, project docs, or paste Google Doc content to use in AI prep briefs.</p>
+</div>
+{% endif %}
 {% endblock %}

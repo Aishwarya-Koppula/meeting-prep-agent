@@ -18,9 +18,9 @@ google:
   lookahead_hours: 24
 
 outlook:
-  # Enable/disable Outlook + Teams integration
-  # Set to true and add OUTLOOK_CLIENT_ID to .env to enable
-  enabled: true
+  # Enable/disable Outlook + Teams integration (Graph API - needs admin consent on edu accounts)
+  # For Purdue: use iCal published link instead (add on Calendars page)
+  enabled: false
   lookahead_hours: 24
 
 # iCal / UniTime (university course timetables, any .ics feed)

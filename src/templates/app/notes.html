@@ -1,29 +1,45 @@
 {% extends "base.html" %}
 {% block title %}Notes — Meeting Prep Agent{% endblock %}
 {% block content %}
-  <h1>Meeting notes</h1>
-  <p class="muted">Notes are reused in future prep for similar meetings. <a href="{{ url_for('notes_add') }}">Add note</a></p>
-  <form method="get" action="{{ url_for('notes_search') }}" style="margin-bottom: 1rem;">
-    <input type="text" name="q" placeholder="Search notes..." value="{{ search_query or '' }}">
-    <button type="submit">Search</button>
-  </form>
+<div class="page-header">
+  <h1>📝 Meeting Notes</h1>
+  <p class="subtitle">Log notes after meetings. AI uses them to prep for similar future meetings.</p>
+</div>
 
-  {% if notes %}
-  <div class="card">
-    <ul style="list-style: none; padding: 0;">
-      {% for n in notes %}
-      <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
-        <strong>{{ n.meeting_title }}</strong>
-        <span class="muted"> · {{ n.date }} · {{ n.id }}</span>
-        <p class="muted" style="margin: 0.25rem 0 0;">{{ n.content[:200] }}{% if n.content|length > 200 %}...{% endif %}</p>
-        {% if n.action_items %}<span class="muted">Action items: {{ n.action_items|length }}</span>{% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% else %}
-  <div class="card">
-    <p class="muted">No notes yet. <a href="{{ url_for('notes_add') }}">Add one</a> after a meeting to reuse in future prep.</p>
-  </div>
-  {% endif %}
+<div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+  <a href="{{ url_for('notes_add') }}" class="btn">+ Add note</a>
+  <form method="get" action="{{ url_for('notes_search') }}" style="display:flex;gap:0.5rem;margin:0;">
+    <input type="text" name="q" placeholder="Search notes..." value="{{ search_query or '' }}" style="max-width:200px;">
+    <button type="submit" class="btn-secondary">Search</button>
+  </form>
+</div>
+
+{% if notes %}
+<div class="card">
+  <ul class="item-list">
+    {% for n in notes %}
+    <li>
+      <div class="item-info">
+        <div class="item-title">{{ n.meeting_title }}</div>
+        <div class="item-meta">{{ n.date }} {% if n.attendees %}· {{ n.attendees|join(", ") }}{% endif %}</div>
+        <div class="item-meta" style="margin-top:0.2rem;">{{ n.content[:200] }}{% if n.content|length > 200 %}...{% endif %}</div>
+        {% if n.action_items %}
+        <div style="margin-top:0.35rem;">
+          {% for a in n.action_items %}
+          <span class="badge badge-warn" style="margin-right:0.25rem;margin-bottom:0.2rem;">{{ a[:40] }}{% if a|length > 40 %}...{% endif %}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% else %}
+<div class="card empty">
+  <div class="emoji">📝</div>
+  <p>No notes yet.</p>
+  <p class="muted">After a meeting, add notes to help AI prep for similar meetings next time.</p>
+</div>
+{% endif %}
 {% endblock %}

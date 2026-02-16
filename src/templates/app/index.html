@@ -1,42 +1,69 @@
 {% extends "base.html" %}
 {% block title %}Home — Meeting Prep Agent{% endblock %}
 {% block content %}
-  <h1>Meeting Prep Agent</h1>
-  <p class="subtitle">Fetch meetings, generate AI briefs, and preview your daily digest.</p>
+  <div class="page-header">
+    <h1>Hey there! 👋</h1>
+    <p class="subtitle">Your AI meeting assistant is ready. Connect calendars, prep smarter, never miss a follow-up.</p>
+  </div>
 
-  <div class="grid-2">
-    <div class="card">
-      <h2>Calendar Sources</h2>
-      <p style="margin-top:0.5rem;">
-        Google: {% if google_connected %}<span class="badge badge-success">Connected</span>{% else %}<span class="badge badge-off">Not connected</span>{% endif %}
-        &nbsp; Outlook: {% if outlook_connected %}<span class="badge badge-success">Connected</span>{% else %}<span class="badge badge-warn">Not connected</span>{% endif %}
-      </p>
-      <p style="margin-top:0.5rem;"><a href="{{ url_for('calendars_list') }}">Manage calendars</a></p>
+  <div class="grid-3">
+    <div class="card stat">
+      <div class="num">{{ meetings_count or 0 }}</div>
+      <div class="label">Meetings added</div>
     </div>
-    <div class="card">
-      <h2>Manual Meetings</h2>
-      <p style="margin-top:0.5rem;">{{ meetings_count }} meeting{{ 's' if meetings_count != 1 else '' }} added</p>
-      <p style="margin-top:0.5rem;"><a href="{{ url_for('meetings_add') }}">Add meeting</a></p>
+    <div class="card stat">
+      <div class="num">{% if google_connected %}✓{% else %}—{% endif %}</div>
+      <div class="label">Google Calendar</div>
+    </div>
+    <div class="card stat">
+      <div class="num">{% if outlook_connected %}✓{% else %}—{% endif %}</div>
+      <div class="label">Outlook</div>
     </div>
   </div>
 
-  <div class="card">
-    <h2>Run Pipeline</h2>
-    <p class="muted" style="margin-bottom:1rem;">Fetch events from all connected calendars, generate AI prep briefs, and preview or send the digest.</p>
+  <div class="card card-accent">
+    <h2>🚀 Run AI Prep Pipeline</h2>
+    <p class="muted" style="margin-bottom:1rem;">Fetch events from all calendars, classify meetings, generate AI prep briefs with talking points, and action items.</p>
     <form method="post" action="{{ url_for('run') }}" style="display:flex;gap:0.5rem;flex-wrap:wrap;">
       <button type="submit" name="dry_run" value="1">Preview digest</button>
       <button type="submit" name="dry_run" value="0" class="btn-success">Run &amp; send email</button>
     </form>
   </div>
 
+  <div class="grid-2">
+    <div class="card">
+      <h2>📅 Quick Actions</h2>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem;">
+        <a href="{{ url_for('week_view') }}" class="btn btn-outline" style="justify-content:center;">View weekly calendar</a>
+        <a href="{{ url_for('meetings_add') }}" class="btn btn-outline" style="justify-content:center;">Add a meeting</a>
+        <a href="{{ url_for('calendars_list') }}" class="btn btn-outline" style="justify-content:center;">Manage calendars</a>
+      </div>
+    </div>
+    <div class="card">
+      <h2>⚡ Meeting Categories</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.75rem;">
+        <span class="badge cat-interview">Interview</span>
+        <span class="badge cat-networking">Networking</span>
+        <span class="badge cat-class">Class</span>
+        <span class="badge cat-office-hours">Office Hours</span>
+        <span class="badge cat-work">Part-time</span>
+        <span class="badge cat-club">Club / Org</span>
+        <span class="badge cat-career-fair">Career Fair</span>
+        <span class="badge cat-other">Other</span>
+      </div>
+      <p class="muted" style="margin-top:0.75rem;">AI auto-classifies your meetings and tailors prep briefs to each type.</p>
+    </div>
+  </div>
+
   {% if config %}
   <div class="card">
-    <h2>Config</h2>
+    <h2>⚙️ Config</h2>
     <p class="muted">
-      Google: {{ 'on' if config.google.enabled else 'off' }} &middot;
-      Outlook: {{ 'on' if config.outlook.enabled else 'off' }} &middot;
-      iCal: {{ 'on' if config.ical.enabled else 'off' }} &middot;
-      Model: {{ config.anthropic.model }}
+      Google: {{ 'on' if config.google.enabled else 'off' }} ·
+      Outlook iCal: on ·
+      iCloud: on ·
+      UniTime: {{ 'on' if config.ical.enabled else 'off' }} ·
+      AI Model: {{ config.anthropic.model }}
     </p>
   </div>
   {% endif %}

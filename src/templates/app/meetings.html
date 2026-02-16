@@ -1,27 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Meetings — Meeting Prep Agent{% endblock %}
 {% block content %}
-  <h1>Meetings</h1>
-  <p class="muted">Manually added meetings are included in the pipeline. <a href="{{ url_for('meetings_add') }}">Add meeting</a></p>
+<div class="page-header">
+  <h1>📋 Meetings</h1>
+  <p class="subtitle">Manually added meetings. These are merged with your calendar events.</p>
+</div>
 
-  {% if meetings %}
-  <div class="card">
-    <ul style="list-style: none; padding: 0;">
-      {% for m in meetings %}
-      <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
-        <strong>{{ m.title }}</strong>
-        <span class="muted"> · {{ m.start_time[:10] }} {{ m.start_time[11:16] if m.start_time|length > 16 else '' }}</span>
-        {% if m.attendees %}<span class="muted"> · {{ m.attendees|join(', ') }}</span>{% endif %}
-        <form method="post" action="{{ url_for('meetings_remove', mid=m.id) }}" style="display: inline; margin-left: 0.5rem;">
-          <button type="submit" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Remove</button>
-        </form>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% else %}
-  <div class="card">
-    <p class="muted">No meetings yet. <a href="{{ url_for('meetings_add') }}">Add one</a> to test the pipeline without a calendar.</p>
-  </div>
-  {% endif %}
+<div style="margin-bottom:1rem;">
+  <a href="{{ url_for('meetings_add') }}" class="btn">+ Add meeting</a>
+</div>
+
+{% if meetings %}
+<div class="card">
+  <ul class="item-list">
+    {% for m in meetings %}
+    <li>
+      <div class="item-info">
+        <div class="item-title">{{ m.title }}</div>
+        <div class="item-meta">
+          {{ m.start_time[:16] | replace("T", " at ") if m.start_time else "No date" }}
+          {% if m.attendees %} · {{ m.attendees|join(", ") }}{% endif %}
+          {% if m.location %} · {{ m.location }}{% endif %}
+        </div>
+        {% if m.description %}<div class="item-meta" style="margin-top:0.25rem;">{{ m.description[:120] }}{% if m.description|length > 120 %}...{% endif %}</div>{% endif %}
+      </div>
+      <form method="post" action="{{ url_for('meetings_remove', mid=m.id) }}">
+        <button type="submit" class="btn-secondary btn-sm">Remove</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% else %}
+<div class="card empty">
+  <div class="emoji">📭</div>
+  <p>No manual meetings yet.</p>
+  <p class="muted">Add meetings that aren't in your calendars, like coffee chats or study groups.</p>
+</div>
+{% endif %}
 {% endblock %}

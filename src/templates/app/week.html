@@ -1,47 +1,45 @@
 {% extends "base.html" %}
-
 {% block title %}Weekly View — Meeting Prep Agent{% endblock %}
-
 {% block head %}
 <style>
   .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; margin-top: 1rem; }
   @media (max-width: 900px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 500px) { .week-grid { grid-template-columns: 1fr; } }
-  .day-col { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; min-height: 180px; }
-  .day-col.today { border-color: var(--accent); }
-  .day-header { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
-  .day-header .dow { color: var(--muted); font-weight: 400; font-size: 0.8rem; }
+  .day-col { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; min-height: 180px; box-shadow: var(--shadow); }
+  .day-col.today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+  .day-header { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); color: var(--muted); }
   .day-header.today-hdr { color: var(--accent); }
-  .evt { background: var(--bg); border-left: 3px solid var(--accent); border-radius: 4px; padding: 0.4rem 0.6rem; margin-bottom: 0.4rem; font-size: 0.82rem; }
-  .evt .evt-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .evt .evt-time { color: var(--muted); font-size: 0.75rem; }
-  .evt .evt-meta { color: var(--muted); font-size: 0.72rem; }
-  .evt[data-source="google"] { border-left-color: #4285f4; }
-  .evt[data-source="outlook"] { border-left-color: #0078d4; }
-  .evt[data-source="teams"] { border-left-color: #6264a7; }
-  .evt[data-source="ical"] { border-left-color: #ff9500; }
-  .evt[data-source="manual"] { border-left-color: var(--success); }
-  .no-events { color: var(--muted); font-size: 0.82rem; font-style: italic; }
-  .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-size: 0.78rem; color: var(--muted); }
-  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
-  .legend .l-google::before { background: #4285f4; }
-  .legend .l-outlook::before { background: #0078d4; }
-  .legend .l-teams::before { background: #6264a7; }
-  .legend .l-ical::before { background: #ff9500; }
-  .legend .l-manual::before { background: var(--success); }
+  .evt { border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.4rem 0.6rem; margin-bottom: 0.4rem; font-size: 0.8rem; background: var(--bg); }
+  .evt .evt-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .evt .evt-time { color: var(--muted); font-size: 0.72rem; }
+  .evt .evt-meta { color: var(--muted); font-size: 0.7rem; }
+  .evt[data-source="google"] { border-left-color: var(--google); }
+  .evt[data-source="outlook"], .evt[data-source="ical"] { border-left-color: var(--outlook); }
+  .evt[data-source="unitime"] { border-left-color: var(--unitime); }
+  .evt[data-source="manual"] { border-left-color: var(--manual); }
+  .no-events { color: var(--muted); font-size: 0.8rem; font-style: italic; padding: 0.5rem 0; }
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; font-size: 0.78rem; color: var(--muted); }
+  .legend span { display: flex; align-items: center; gap: 0.3rem; }
+  .legend span::before { content: ""; width: 10px; height: 10px; border-radius: 3px; }
+  .legend .l-google::before { background: var(--google); }
+  .legend .l-outlook::before { background: var(--outlook); }
+  .legend .l-unitime::before { background: var(--unitime); }
+  .legend .l-icloud::before { background: var(--icloud); }
+  .legend .l-manual::before { background: var(--manual); }
 </style>
 {% endblock %}
-
 {% block content %}
-<h1>Weekly View</h1>
-<p class="muted">Events from all enabled calendar sources for the next 7 days.</p>
+<div class="page-header">
+  <h1>📅 Weekly View</h1>
+  <p class="subtitle">All your events from every calendar, in one place.</p>
+</div>
 
 {% if errors %}
-  <div class="card">
-    <h2>Warnings</h2>
-    <ul>
+  <div class="card" style="border-left:4px solid var(--warn);">
+    <h2>⚠️ Warnings</h2>
+    <ul style="list-style:none;">
     {% for e in errors %}
-      <li class="error">{{ e }}</li>
+      <li class="muted" style="padding:0.2rem 0;">{{ e }}</li>
     {% endfor %}
     </ul>
   </div>
@@ -53,8 +51,8 @@
       <div class="day-header{% if loop.index0 == 0 %} today-hdr{% endif %}">
         {{ day.dow }} {{ day.date[5:] }}
       </div>
-      {% if day.items %}
-        {% for it in day.items %}
+      {% if day.events %}
+        {% for it in day.events %}
           <div class="evt" data-source="{{ it.source }}">
             <div class="evt-title" title="{{ it.title }}">{{ it.title }}</div>
             {% if it.start and it.end %}
@@ -75,9 +73,8 @@
 <div class="legend">
   <span class="l-google">Google</span>
   <span class="l-outlook">Outlook</span>
-  <span class="l-teams">Teams</span>
-  <span class="l-ical">iCal/UniTime</span>
+  <span class="l-unitime">UniTime</span>
+  <span class="l-icloud">iCloud</span>
   <span class="l-manual">Manual</span>
 </div>
-
 {% endblock %}
